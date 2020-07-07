@@ -104,6 +104,7 @@ namespace smx_config
 
         private Rectangle Fill, Back;
 
+
         private static void ValueChangedCallback(DependencyObject target, DependencyPropertyChangedEventArgs args)
         {
             LevelBar self = target as LevelBar;
@@ -122,8 +123,15 @@ namespace smx_config
         private void Refresh()
         {
             // If Error is true, fill the bar red.
-            double FillHeight = Error? 1:Value;
-            Fill.Height = Math.Round(Math.Max(FillHeight, 0) * (Back.Height - 2));
+            double FillVal = Error? 1:Value;
+            if(Back.Width > Back.Height) //Horizontal
+            {
+                Fill.Width = Math.Round(Math.Max(FillVal, 0) * Back.Width);
+            }
+            else //Vertical
+            {
+                Fill.Height = Math.Round(Math.Max(FillVal, 0) * (Back.Height - 2));
+            }
 
             if(Error)
             {
@@ -131,10 +139,12 @@ namespace smx_config
             }
             else
             {
-                // Scale from green (#FF0000) to yellow (#FFFF00) as we go from 0 to .4.
-                double ColorValue = Value / 0.4;
-                Byte Yellow = (Byte) (Math.Max(0, Math.Min(255, ColorValue * 255)) );
-                Fill.Fill = new SolidColorBrush(Color.FromRgb(255,Yellow,0));
+                // Scale from green (#00FF00) to Red (#FF0000)
+                double RedValue = Value / 0.5;
+                double GreenValue = 1 - ((Value - 0.5) / 0.5);
+                Byte Red = (Byte)(Math.Max(0, Math.Min(255, RedValue * 255)));
+                Byte Green = (Byte) (Math.Max(0, Math.Min(255, GreenValue * 255)) );
+                Fill.Fill = new SolidColorBrush(Color.FromRgb(Red, Green, 0));
             }
         }
     }

@@ -352,6 +352,22 @@ namespace smx_config
             RefreshSelectedColorPicker();
 
             // Show the threshold warning explanation if any panels are showing the threshold warning icon.
+            bool ShowThresholdWarningText = false;
+            foreach(Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
+            {
+                SMX.SMXConfig config = activePad.Item2;
+                for(int panelIdx = 0; panelIdx < 9; ++panelIdx)
+                {
+                    for(int sensor = 0; sensor < 4; ++sensor)
+                    {
+                        if(config.ShowThresholdWarning(panelIdx, sensor))
+                            ShowThresholdWarningText = true;
+                    }
+                }
+            }
+            //Useless for pro players
+            //ThresholdWarningText.Visibility = ShowThresholdWarningText ? Visibility.Visible : Visibility.Hidden;
+
             // If a second controller has connected and we're on Both, see if we need to prompt
             // to sync configs.  We only actually need to do this if a controller just connected.
             if(args.ConfigurationChanged)

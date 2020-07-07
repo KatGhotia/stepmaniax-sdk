@@ -190,8 +190,10 @@ namespace smx_config
         ContentControl upperValueVisibility;
         Image ThresholdWarning;
         PlatformSensorDisplay SensorDisplay;
+        LevelBar SensorBar;
 
         OnConfigChange onConfigChange;
+        OnConfigChange onConfigInputChange;
 
         public override void OnApplyTemplate()
         {
@@ -204,6 +206,7 @@ namespace smx_config
             upperValueVisibility = GetTemplateChild("UpperValueVisibility") as ContentControl;
             ThresholdWarning = GetTemplateChild("ThresholdWarning") as Image;
             SensorDisplay = GetTemplateChild("PlatformSensorDisplay") as PlatformSensorDisplay;
+            SensorBar = GetTemplateChild("SensorBar") as LevelBar;
 
             singleSlider.ValueChanged += delegate(object sender, RoutedPropertyChangedEventArgs<double> e) { SaveToConfig(); };
             doubleSlider.ValueChanged += delegate(DoubleSlider doubleSlider) { SaveToConfig(); };
@@ -218,9 +221,58 @@ namespace smx_config
                 dialog.ShowDialog();
             };
 
+            Loaded += delegate (object sender, RoutedEventArgs e)
+            {
+                for (int pad = 0; pad < 2; ++pad)
+                    SMX.SMX.SetSensorTestMode(pad, SMX.SMX.SensorTestMode.CalibratedValues);
+            };
+
+            Unloaded += delegate (object sender, RoutedEventArgs e)
+            {
+                for (int pad = 0; pad < 2; ++pad)
+                    SMX.SMX.SetSensorTestMode(pad, SMX.SMX.SensorTestMode.Off);
+            };
+
             onConfigChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args) {
                 LoadUIFromConfig(ActivePad.GetFirstActivePadConfig(args));
             });
+
+            onConfigInputChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args) {
+                Refresh(args);
+            });
+            onConfigInputChange.RefreshOnInputChange = true;
+        }
+
+        private void Refresh(LoadFromConfigDelegateArgs args)
+        {
+            if(SensorDisplay.GetSoloSensorWorking(out int activePanel, out int activeSensor))
+            {
+                SensorBar.Visibility = Visibility.Visible;
+                int selectedPad = ActivePad.selectedPad == ActivePad.SelectedPad.P2 ? 1 : 0;
+                var controllerData = args.controller[selectedPad];
+                int sensorIndex = activePanel * 4 + activeSensor;
+                if (!controllerData.test_data.bHaveDataFromPanel[activePanel] || args.controller[selectedPad].test_data.bBadSensorInput[sensorIndex])
+                {
+                    SensorBar.Value = 0;
+                    return;
+                }
+
+                Int16 value = controllerData.test_data.sensorLevel[sensorIndex];
+
+                if (value < 0)
+                    value = 0;
+
+                // Scale differently depending on if this is an FSR panel or a load cell panel.
+                bool isFSR = controllerData.config.masterVersion >= 4 && (controllerData.config.configFlags & SMX.SMXConfigFlags.PlatformFlags_FSR) != 0;
+                if (isFSR)
+                    value >>= 2;
+                float maxValue = isFSR ? 250 : 500;
+                SensorBar.Value = value / maxValue;
+            }
+            else
+            {
+                SensorBar.Visibility = Visibility.Hidden;
+            }
         }
 
         private void RefreshSliderActiveProperty()
@@ -1359,7 +1411,7 @@ namespace smx_config
             base.OnApplyTemplate();
 
             panelIconWithSensors = new PanelIconWithSensors[9];
-            for(int panel = 0; panel < 9; ++panel)
+            for (int panel = 0; panel < 9; ++panel)
                 panelIconWithSensors[panel] = GetTemplateChild("Panel" + panel) as PanelIconWithSensors;
         }
 
@@ -1390,6 +1442,32 @@ namespace smx_config
                 for(int sensor = 0; sensor < 4; ++sensor)
                     GetSensor(panel, sensor).Highlight = 0;
             }
+        }
+
+        public bool GetSoloSensorWorking(out int activePanel, out int activeSensor)
+        {
+            bool sensorFound = false;
+            activePanel = -1;
+            activeSensor = -1;
+            for (int panel = 0; panel < 9; ++panel)
+            {
+                for (int sensor = 0; sensor < 4; ++sensor)
+                {
+                    if(GetSensor(panel, sensor).Highlight == 2)
+                    {
+                        //If the slider controls more than one sensor, it returns false
+                        if (sensorFound)
+                            return false; 
+                        else
+                        {
+                            activePanel = panel;
+                            activeSensor = sensor;
+                            sensorFound = true;
+                        }
+                    }
+                }
+            }
+            return sensorFound;
         }
     }
 }

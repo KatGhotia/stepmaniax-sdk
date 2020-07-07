@@ -7,6 +7,7 @@
 #include <windows.h>
 #include <stdexcept>
 #include <memory>
+#include <stdexcept>
 using namespace std;
 using namespace SMX;
 
@@ -72,7 +73,7 @@ void SMX::SMXManager::Shutdown()
 
     // Make sure we're not being called from within m_UserCallbackThread, since that'll
     // deadlock when we shut down m_UserCallbackThread.
-    if(m_UserCallbackThread.IsCurrentThread())
+    if (m_UserCallbackThread.IsCurrentThread())
         throw runtime_error("SMX::SMXManager::Shutdown must not be called from an SMX callback");
 
     // Shut down the thread we make user callbacks from.

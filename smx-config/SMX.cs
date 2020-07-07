@@ -520,10 +520,16 @@ namespace SMX
                 Tare = '3',
         };
 
+        //Avoid multiple call for the same test mode (make the call of some multiples controls easier)
+        private static bool[] m_sensorHasBeenSetOnce = new bool[2] { false, false };
+        private static SensorTestMode[] m_currentMode = new SensorTestMode[2] { SensorTestMode.Off, SensorTestMode.Off };
         public static void SetSensorTestMode(int pad, SensorTestMode mode)
         {
             if(!DLLAvailable()) return;
+            if (m_sensorHasBeenSetOnce[pad] && mode == m_currentMode[pad]) return;
             SMX_SetTestMode(pad, (int) mode);
+            m_currentMode[pad] = mode;
+            m_sensorHasBeenSetOnce[pad] = true;
         }
 
         public static bool GetTestData(int pad, out SMXSensorTestModeData data)
