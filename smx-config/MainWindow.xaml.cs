@@ -169,7 +169,7 @@ namespace smx_config
         {
             InitializeComponent();
 
-            onConfigChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args)
+             onConfigChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args)
             {
                 LoadUIFromConfig(args);
             });
@@ -222,6 +222,8 @@ namespace smx_config
                 if(result == MessageBoxResult.No)
                     e.Cancel = true;
             };
+
+            Main.SelectedItem = MainTab;
         }
 
         bool IsThresholdSliderShown(string type)

@@ -894,7 +894,7 @@ Use if the platform is too sensitive.</clr:String>
 
         <TabControl x:Name="Main" Margin="0,0,0,0" Visibility='Visible' HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
                     SelectionChanged="MainTab_Selected">
-            <TabItem Header="Panels">
+            <TabItem x:Name="MainTab" Header="Panels">
                 <StackPanel Background="#FFE5E5E5">
                     <TextBlock HorizontalAlignment="Center" Margin="0,15,0,10" VerticalAlignment="Top"
                                     TextAlignment="Center"
