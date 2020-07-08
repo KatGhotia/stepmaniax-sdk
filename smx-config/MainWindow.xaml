@@ -7,7 +7,7 @@
         xmlns:controls="clr-namespace:smx_config"
         mc:Ignorable="d"
         x:Name="root"
-        Title="StepManiaX Tool Enhanced"
+        Title="StepManiaX ConfigTool Pro (by BNKT)"
         Icon="Resources/window icon.png"
         Height="700" Width="525" ResizeMode="CanMinimize"
         UseLayoutRounding="True">
@@ -887,6 +887,8 @@ Use if the platform is too sensitive.</clr:String>
             <Label Content="Searching for controller..."
                    HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="33.333"/>
             <Label x:Name="Version1" Content="Version"
+                   HorizontalAlignment="Center" VerticalAlignment="Bottom" FontSize="15" Margin="0 0 0 30" />
+            <Label x:Name="ToolRev1" Content="Tool Revision v1"
                    HorizontalAlignment="Center" VerticalAlignment="Bottom" FontSize="15" Margin="0 0 0 10" />
         </Grid>
 
@@ -920,6 +922,16 @@ Input will be disabled from deselected panels.</TextBlock>
                     <TextBlock HorizontalAlignment="Center"
                                     xml:space="preserve" FontSize="16">Reset all settings</TextBlock>
                     <Button Content="Factory reset" Width="140" Margin="0 10 0 0" Padding="0 4" Click="FactoryReset_Click"/>
+
+                    <Separator Margin="0,10,0,10" />
+                    <!-- This version label is tweaked so it's in the same place as the one on the
+                         connecting screen.  If we use the same margin, the tab container's border
+                         shifts it by a couple pixels, which makes it fidget around when we connect
+                         and disconnect. -->
+                    <Label x:Name="Version2" Content="Version"
+                        HorizontalAlignment="Center" VerticalAlignment="Bottom" FontSize="15" Margin="1,0,0,7" Grid.Column="1" />
+                    <Label x:Name="ToolRev2" Content="Tool Revision v1"
+                        HorizontalAlignment="Center" VerticalAlignment="Bottom" FontSize="15" Margin="1,0,0,7" Grid.Column="1" />
                 </StackPanel>
             </TabItem>
             
@@ -962,6 +974,19 @@ Input will be disabled from deselected panels.</TextBlock>
                                     VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Margin="0,0,5,0"/>
                     </DockPanel>
                 </Grid>
+            </TabItem>
+
+            <TabItem Header="Advanced">
+                <StackPanel Background="#FFE5E5E5">
+                    <TextBlock HorizontalAlignment="Center" Margin="0,15,0,10" VerticalAlignment="Top"
+                                    TextAlignment="Center"
+                                    xml:space="preserve" FontSize="16">Advanced values</TextBlock>
+                    <TextBlock xml:space="preserve" HorizontalAlignment="Center" Margin="0,0,0,0" TextAlignment="Center" Foreground="#FF0000">WARNING : These value was not designed to be changed.
+Modify them if you know EXACTLY what you are doing.
+For turing off Auto Calibration, set "AutoCalib Max Tare" to 0</TextBlock>
+                    <Separator Margin="0,10,0,10" />
+                    <TextBlock xml:space="preserve" HorizontalAlignment="Center" Margin="0,0,0,0" TextAlignment="Center">//TODO</TextBlock>
+                </StackPanel>
             </TabItem>
 
             <TabItem Header="Diagnostics">
@@ -1056,13 +1081,6 @@ instead of only panels with sensors.</TextBlock>
                             <Button x:Name="SetAllPanelsToCurrentColor" Content="Set all panels to this color" HorizontalAlignment="Center" Padding="6,2" Margin="0,6,0,0" />
                         </StackPanel>
                     </StackPanel>
-
-                    <!-- This version label is tweaked so it's in the same place as the one on the
-                         connecting screen.  If we use the same margin, the tab container's border
-                         shifts it by a couple pixels, which makes it fidget around when we connect
-                         and disconnect. -->
-                    <Label x:Name="Version2" Content="Version"
-                        HorizontalAlignment="Center" VerticalAlignment="Bottom" FontSize="15" Margin="1,0,0,7" Grid.Column="1" />
                 </Grid>
             </TabItem>
         </TabControl>

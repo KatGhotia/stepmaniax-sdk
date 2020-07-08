@@ -159,6 +159,9 @@ namespace smx_config
 
     public partial class MainWindow: Window
     {
+        //To be changed on each release
+        private const int TOOL_REVISION = 1;
+        
         OnConfigChange onConfigChange;
         ShowAutoLightsColor showAutoLightsColor = new ShowAutoLightsColor();
 
@@ -303,6 +306,8 @@ namespace smx_config
 
             Version1.Content = "SMXConfig version " + SMX.SMX.Version();
             Version2.Content = "SMXConfig version " + SMX.SMX.Version();
+            ToolRev1.Content = "Tool Revision v" + TOOL_REVISION;
+            ToolRev2.Content = "Tool Revision v" + TOOL_REVISION;
 
             AutoLightsColor.StartedDragging += delegate () { showAutoLightsColor.Start(); };
             AutoLightsColor.StoppedDragging += delegate () { showAutoLightsColor.Stop(); };
