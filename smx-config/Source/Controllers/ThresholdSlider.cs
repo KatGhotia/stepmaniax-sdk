@@ -51,12 +51,12 @@ namespace smx_config
 
         DoubleSlider slider;
         Label LowerLabel, UpperLabel;
-        Image ThresholdWarning;
+        //Image ThresholdWarning;
         PlatformSensorDisplay SensorDisplay;
-        LevelBar SensorBar;
+        //LevelBar SensorBar;
 
         OnConfigChange onConfigChange;
-        OnConfigChange onConfigInputChange;
+        //OnConfigChange onConfigInputChange;
 
         public override void OnApplyTemplate()
         {
@@ -65,9 +65,9 @@ namespace smx_config
             slider = GetTemplateChild("Slider") as DoubleSlider;
             LowerLabel = GetTemplateChild("LowerValue") as Label;
             UpperLabel = GetTemplateChild("UpperValue") as Label;
-            ThresholdWarning = GetTemplateChild("ThresholdWarning") as Image;
+            //ThresholdWarning = GetTemplateChild("ThresholdWarning") as Image;
             SensorDisplay = GetTemplateChild("PlatformSensorDisplay") as PlatformSensorDisplay;
-            SensorBar = GetTemplateChild("SensorBar") as LevelBar;
+            //SensorBar = GetTemplateChild("SensorBar") as LevelBar;
 
             slider.ValueChanged += delegate (DoubleSlider slider) { SaveToConfig(); };
 
@@ -84,14 +84,14 @@ namespace smx_config
             onConfigChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args) {
                 LoadUIFromConfig(ActivePad.GetFirstActivePadConfig(args));
             });
-
-            onConfigInputChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args) {
+            
+           /* onConfigInputChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args) {
                 Refresh(args);
             });
-            onConfigInputChange.RefreshOnInputChange = true;
+            onConfigInputChange.RefreshOnInputChange = true;*/
         }
 
-        private void Refresh(LoadFromConfigDelegateArgs args)
+        /*private void Refresh(LoadFromConfigDelegateArgs args)
         {
             if (SensorDisplay.GetSoloSensorWorking(out int activePanel, out int activeSensor))
             {
@@ -121,7 +121,7 @@ namespace smx_config
             {
                 SensorBar.Visibility = Visibility.Hidden;
             }
-        }
+        }*/
 
         private void RefreshSliderActiveProperty()
         {
@@ -135,15 +135,15 @@ namespace smx_config
         //
         // This returns values for FSRs.  We don't configure individual sensors with load cells,
         // and the sensor value will be ignored.
-        private List<ThresholdSettings.PanelAndSensor> GetControlledSensors(bool includeOverridden)
+        private List<ThresholdSettings.PanelAndSensor> GetControlledSensors(SMX.SMXConfig config, bool includeOverridden)
         {
-            return ThresholdSettings.GetControlledSensorsForSliderType(Type, AdvancedModeEnabled, includeOverridden);
+            return ThresholdSettings.GetControlledSensorsForSliderType(Type, config.HasAllPanels(), includeOverridden);
         }
 
 
         private void SetValueToConfig(ref SMX.SMXConfig config)
         {
-            List<ThresholdSettings.PanelAndSensor> panelAndSensors = GetControlledSensors(false);
+            List<ThresholdSettings.PanelAndSensor> panelAndSensors = GetControlledSensors(config, false);
             foreach (ThresholdSettings.PanelAndSensor panelAndSensor in panelAndSensors)
             {
                 if (!config.isFSR())
@@ -168,7 +168,7 @@ namespace smx_config
             lower = upper = 0;
 
             // Use the first controlled sensor.  The rest should be the same.
-            foreach (ThresholdSettings.PanelAndSensor panelAndSensor in GetControlledSensors(false))
+            foreach (ThresholdSettings.PanelAndSensor panelAndSensor in GetControlledSensors(config, false))
             {
                 if (!config.isFSR())
                 {
@@ -203,7 +203,7 @@ namespace smx_config
 
         bool UpdatingUI = false;
         private void LoadUIFromConfig(SMX.SMXConfig config)
-        {
+    {
             // Make sure SaveToConfig doesn't treat these as the user changing values.
             UpdatingUI = true;
 
@@ -243,7 +243,7 @@ namespace smx_config
                 UpperLabel.Content = upper.ToString();
             }
 
-            List<ThresholdSettings.PanelAndSensor> controlledSensors = GetControlledSensors(false);
+            List<ThresholdSettings.PanelAndSensor> controlledSensors = GetControlledSensors(config, false);
 
             // SensorDisplay shows which sensors we control.  If this sensor is enabled, show the
             // sensors this sensor controls.
@@ -251,7 +251,7 @@ namespace smx_config
             // If we're disabled, the icon will be empty.  That looks
             // weird, so in that case we show 
             // Set the icon next to the slider to show which sensors we control.
-            List<ThresholdSettings.PanelAndSensor> defaultControlledSensors = GetControlledSensors(true);
+            List<ThresholdSettings.PanelAndSensor> defaultControlledSensors = GetControlledSensors(config, true);
             SensorDisplay.SetFromPanelAndSensors(controlledSensors, defaultControlledSensors);
 
             UpdatingUI = false;

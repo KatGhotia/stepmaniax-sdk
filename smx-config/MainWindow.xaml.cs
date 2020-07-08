@@ -409,9 +409,18 @@ namespace smx_config
             P2_Floor.Visibility =
                 args.firmwareVersion() >= 5 ? Visibility.Visible : Visibility.Collapsed;
 
+            DebounceNodelayBox.Text = firstConfig.debounceNodelayMilliseconds.ToString();
+            DebounceDelayBox.Text = firstConfig.debounceDelayMs.ToString();
+            PanelDebounceBox.Text = firstConfig.panelDebounceMicroseconds.ToString();
+            BadSensorBox.Text = firstConfig.badSensorMinimumDelaySeconds.ToString();
+            AutoCalibMaxDeviationBox.Text = firstConfig.autoCalibrationMaxDeviation.ToString();
+            AutoCalibAverageBox.Text = firstConfig.autoCalibrationAveragesPerUpdate.ToString();
+            AutoCalibSamplesBox.Text = firstConfig.autoCalibrationSamplesPerAverage.ToString();
+            AutoCalibMaxTare.Text = firstConfig.autoCalibrationMaxTare.ToString();
+
             // Show the color slider or GIF UI depending on which one is set in flags.
             // If both pads are turned on, just use the first one.
-            foreach(Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
+            foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
             {
                 SMX.SMXConfig config = activePad.Item2;
 
@@ -634,6 +643,80 @@ namespace smx_config
         }
 
 
+        List<Tuple<TextBox, string>> m_textBoxValues = null;
+        private void UpdateAdvancedValues_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
+            {
+                int pad = activePad.Item1;
+                SMX.SMXConfig config = activePad.Item2;
+
+                if (m_textBoxValues == null)
+                {
+                    m_textBoxValues = new List<Tuple<TextBox, string>>()
+                    {
+                        new Tuple<TextBox, string>(DebounceNodelayBox, "Debounce Nodelay"),
+                        new Tuple<TextBox, string>(DebounceDelayBox, "Debounce Delay"),
+                        new Tuple<TextBox, string>(PanelDebounceBox, "Panel Debounce"),
+                        new Tuple<TextBox, string>(BadSensorBox, "Bad sensor"),
+                        new Tuple<TextBox, string>(AutoCalibMaxDeviationBox, "AutoCalib Max Deviation"),
+                        new Tuple<TextBox, string>(AutoCalibAverageBox, "AutoCalib Average per Update"),
+                        new Tuple<TextBox, string>(AutoCalibSamplesBox, "AutoCalib Samples per Average"),
+                        new Tuple<TextBox, string>(AutoCalibMaxTare, "AutoCalib Max Tare"),
+                    };
+                }
+
+                string error = null;
+                config.debounceNodelayMilliseconds = TryParseShortTextData(DebounceNodelayBox, "Debounce Nodelay", ref error);
+                config.debounceDelayMs = TryParseShortTextData(DebounceDelayBox, "Debounce Delay", ref error);
+                config.panelDebounceMicroseconds = TryParseShortTextData(PanelDebounceBox, "Panel Debounce", ref error);
+                config.badSensorMinimumDelaySeconds = TryParseByteTextData(BadSensorBox, "Bad sensor", ref error);
+                config.autoCalibrationMaxDeviation = TryParseByteTextData(AutoCalibMaxDeviationBox, "AutoCalib Max Deviation", ref error);
+                config.autoCalibrationAveragesPerUpdate = TryParseShortTextData(AutoCalibAverageBox, "AutoCalib Average per Update", ref error);
+                config.autoCalibrationSamplesPerAverage = TryParseShortTextData(AutoCalibSamplesBox, "AutoCalib Samples per Average", ref error);
+                config.autoCalibrationMaxTare = TryParseShortTextData(AutoCalibMaxTare, "AutoCalib Max Tare", ref error);
+
+                if (!string.IsNullOrEmpty(error))
+                {
+                    AdvancedValueError.Text = error;
+                    AdvancedValueError.Foreground = (SolidColorBrush)(new BrushConverter().ConvertFrom("#AA0000"));
+                }
+                else
+                {
+                    SMX.SMX.SetConfig(pad, config);
+                    AdvancedValueError.Text = "Updated at " + DateTime.Now.ToLongTimeString();
+                    AdvancedValueError.Foreground = (SolidColorBrush)(new BrushConverter().ConvertFrom("#00AA00"));
+                }
+            }
+            CurrentSMXDevice.singleton.FireConfigurationChanged(null);
+        }
+
+        private ushort TryParseShortTextData(TextBox box, string title, ref string error)
+        {
+            //An error already occured
+            if (!string.IsNullOrEmpty(error))
+                return default;
+
+            error = null;
+            if (ushort.TryParse(box.Text, out ushort result))
+                return result;
+            error = "Update failed : " + title + " has a wrong value";
+            return default;
+        }
+
+        private byte TryParseByteTextData(TextBox box, string title, ref string error)
+        {
+            //An error already occured
+            if (!string.IsNullOrEmpty(error))
+                return default;
+
+            error = null;
+            if (byte.TryParse(box.Text, out byte result))
+                return result;
+            error = "Update failed : " + title + " has a wrong value";
+            return default;
+        }
+
         private void FactoryReset_Click(object sender, RoutedEventArgs e)
         {
             foreach(Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
@@ -814,8 +897,8 @@ namespace smx_config
                 // on the advanced tab.
                 CreateThresholdSliders();
 
-                for (int pad = 0; pad < 2; ++pad)
-                    SMX.SMX.SetSensorTestMode(pad, SMX.SMX.SensorTestMode.CalibratedValues);
+                /*for (int pad = 0; pad < 2; ++pad)
+                    SMX.SMX.SetSensorTestMode(pad, SMX.SMX.SensorTestMode.CalibratedValues);*/
             }
             else if(Main.SelectedItem == ColorTab)
             {
@@ -823,8 +906,8 @@ namespace smx_config
             }
             else
             {
-                for (int pad = 0; pad < 2; ++pad)
-                    SMX.SMX.SetSensorTestMode(pad, SMX.SMX.SensorTestMode.Off);
+                /*for (int pad = 0; pad < 2; ++pad)
+                    SMX.SMX.SetSensorTestMode(pad, SMX.SMX.SensorTestMode.Off);*/
             }
         }
     }

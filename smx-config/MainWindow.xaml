@@ -934,14 +934,15 @@ Input will be disabled from deselected panels.</TextBlock>
                         HorizontalAlignment="Center" VerticalAlignment="Bottom" FontSize="15" Margin="1,0,0,7" Grid.Column="1" />
                 </StackPanel>
             </TabItem>
-            
+
             <TabItem x:Name="SensitivityTab" Header="Sensitivity">
                 <Grid Background="#FFE5E5E5" RenderTransformOrigin="0.5,0.5">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="140*"/>
-                        <ColumnDefinition Width="373*"/>
+                        <ColumnDefinition Width="63*"/>
+                        <ColumnDefinition Width="310*"/>
                     </Grid.ColumnDefinitions>
-                    <DockPanel Margin="0,0,0,0" VerticalAlignment="Stretch" Grid.ColumnSpan="2">
+                    <DockPanel Margin="0,0,0,0" VerticalAlignment="Stretch" Grid.ColumnSpan="3">
 
                         <TextBlock DockPanel.Dock="Top" HorizontalAlignment="Center" Margin="0,15,0,10" VerticalAlignment="Top"
                                    TextAlignment="Center"
@@ -969,7 +970,7 @@ Input will be disabled from deselected panels.</TextBlock>
                             Margin="0 10 0 10"
                             IsChecked="{Binding Path=EnableSensor, Mode=TwoWay, RelativeSource={RelativeSource Self}}"
                     />
-                        
+
                         <DockPanel DockPanel.Dock="Bottom"
                                     VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Margin="0,0,5,0"/>
                     </DockPanel>
@@ -981,11 +982,46 @@ Input will be disabled from deselected panels.</TextBlock>
                     <TextBlock HorizontalAlignment="Center" Margin="0,15,0,10" VerticalAlignment="Top"
                                     TextAlignment="Center"
                                     xml:space="preserve" FontSize="16">Advanced values</TextBlock>
-                    <TextBlock xml:space="preserve" HorizontalAlignment="Center" Margin="0,0,0,0" TextAlignment="Center" Foreground="#FF0000">WARNING : These value was not designed to be changed.
+                    <TextBlock xml:space="preserve" HorizontalAlignment="Center" Margin="0,0,0,0" TextAlignment="Center" Foreground="#FF0000" FontSize="15">WARNING : These value was not designed to be changed.
 Modify them if you know EXACTLY what you are doing.
 For turing off Auto Calibration, set "AutoCalib Max Tare" to 0</TextBlock>
                     <Separator Margin="0,10,0,10" />
-                    <TextBlock xml:space="preserve" HorizontalAlignment="Center" Margin="0,0,0,0" TextAlignment="Center">//TODO</TextBlock>
+                    
+                    <StackPanel HorizontalAlignment="Left" Margin="20,0,20,0" Orientation="Vertical" Width="470">
+                        <TextBlock xml:space="preserve" TextAlignment="Left">Debounce Nodelay Milliseconds [0-65535] (default : 0)</TextBlock>
+                        <TextBox x:Name="DebounceNodelayBox" xml:space="preserve" Width="50" Margin="0,-15,0,0" HorizontalAlignment="Right" TextAlignment="Left">0</TextBox>
+                    </StackPanel>
+                    <StackPanel HorizontalAlignment="Left" Margin="20,0,20,0" Orientation="Vertical" Width="470">
+                        <TextBlock xml:space="preserve" TextAlignment="Left">Debounce Delay Milliseconds [0-65535] (default : 0)</TextBlock>
+                        <TextBox x:Name="DebounceDelayBox" xml:space="preserve" Width="50" Margin="0,-15,0,0" HorizontalAlignment="Right" TextAlignment="Left">0</TextBox>
+                    </StackPanel>
+                    <StackPanel HorizontalAlignment="Left" Margin="20,0,20,0" Orientation="Vertical" Width="470">
+                        <TextBlock xml:space="preserve" TextAlignment="Left">Panel Debounce Microseconds [0-65535] (default : 4000)</TextBlock>
+                        <TextBox x:Name="PanelDebounceBox" xml:space="preserve" Width="50" Margin="0,-15,0,0" HorizontalAlignment="Right" TextAlignment="Left">4000</TextBox>
+                    </StackPanel>
+                    <StackPanel HorizontalAlignment="Left" Margin="20,0,20,0" Orientation="Vertical" Width="470">
+                        <TextBlock xml:space="preserve" TextAlignment="Left">Bad Sensor Minimum Delay Seconds [0-255] (default : 15)</TextBlock>
+                        <TextBox x:Name="BadSensorBox" xml:space="preserve" Width="50" Margin="0,-15,0,0" HorizontalAlignment="Right" TextAlignment="Left">15</TextBox>
+                    </StackPanel>
+                    <StackPanel HorizontalAlignment="Left" Margin="20,0,20,0" Orientation="Vertical" Width="470">
+                        <TextBlock xml:space="preserve" TextAlignment="Left">AutoCalib Max Deviation [0-255] (default : 100)</TextBlock>
+                        <TextBox x:Name="AutoCalibMaxDeviationBox" xml:space="preserve" Width="50" Margin="0,-15,0,0" HorizontalAlignment="Right" TextAlignment="Left">100</TextBox>
+                    </StackPanel>
+                    <StackPanel HorizontalAlignment="Left" Margin="20,0,20,0" Orientation="Vertical" Width="470">
+                        <TextBlock xml:space="preserve" TextAlignment="Left">AutoCalib Averages Per Updates [0-65535] (default : 60)</TextBlock>
+                        <TextBox x:Name="AutoCalibAverageBox" xml:space="preserve" Width="50" Margin="0,-15,0,0" HorizontalAlignment="Right" TextAlignment="Left">60</TextBox>
+                    </StackPanel>
+                    <StackPanel HorizontalAlignment="Left" Margin="20,0,20,0" Orientation="Vertical" Width="470">
+                        <TextBlock xml:space="preserve" TextAlignment="Left">AutoCalib Samples Per Average [0-65535] (default : 500)</TextBlock>
+                        <TextBox x:Name="AutoCalibSamplesBox" xml:space="preserve" Width="50" Margin="0,-15,0,0" HorizontalAlignment="Right" TextAlignment="Left">500</TextBox>
+                    </StackPanel>
+                    <StackPanel HorizontalAlignment="Left" Margin="20,0,20,0" Orientation="Vertical" Width="470">
+                        <TextBlock xml:space="preserve" TextAlignment="Left" Foreground="#00AA00">AutoCalib Max Tare [0-65535] (default : 65535) (0 = no auto calibration)</TextBlock>
+                        <TextBox x:Name="AutoCalibMaxTare" xml:space="preserve" Width="50" Margin="0,-15,0,0" HorizontalAlignment="Right" TextAlignment="Left">65535</TextBox>
+                    </StackPanel>
+                    <Separator Margin="0,10,0,10" />
+                    <Button Content="Update" Width="140" Margin="0 10 0 0" Padding="0 4" Click="UpdateAdvancedValues_Click"/>
+                    <TextBlock x:Name="AdvancedValueError" xml:space="preserve" TextAlignment="Center" Foreground="#AA0000" FontSize="15" Margin="0,10,0,0"></TextBlock>
                 </StackPanel>
             </TabItem>
 
