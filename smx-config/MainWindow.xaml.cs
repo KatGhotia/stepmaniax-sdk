@@ -194,7 +194,7 @@ namespace smx_config
                     // The user can upload GIF animations and doesn't need to leave us running
                     // for them to work.  You can still use this tool to drive animations, but
                     // don't confirm exiting.
-                    if(config.masterVersion >= 4)
+                    if(config.IsNewGen())
                         continue;
 
                     // If AutoLightingUsePressedAnimations isn't set, the panel is using step
@@ -216,6 +216,78 @@ namespace smx_config
                 if(result == MessageBoxResult.No)
                     e.Cancel = true;
             };
+        }
+
+        bool IsThresholdSliderShown(string type)
+        {
+            SMX.SMXConfig config = ActivePad.GetFirstActivePadConfig();
+            bool[] enabledPanels = config.GetEnabledPanels();
+
+            // Check the list of sensors this slider controls.  If the list is empty, don't show it.
+            // For example, if the user adds all four sensors on the up panel to custom-sensors, the
+            // up button has nothing left to control, so we'll hide it.
+            //
+            // Don't do this for custom, inner-sensors or outer-sensors.  Those are always shown in
+            // advanced mode.
+            List<ThresholdSettings.PanelAndSensor> panelAndSensors = ThresholdSettings.GetControlledSensorsForSliderType(type, config.HasAllPanels(), false);
+            if(type == "custom-sensors" || type == "inner-sensors" || type == "outer-sensors")
+            {
+                if(!config.HasAllPanels() || !config.isFSR())
+                    return false;
+            }
+            else
+            {
+                if(panelAndSensors.Count == 0)
+                    return false;
+            }
+
+            // Hide thresholds that only affect panels that are disabled, so we don't show
+            // corner panel sliders in advanced mode if the corner panels are disabled.  We
+            // don't handle this in GetControlledSensorsForSliderType, since we do want cardinal
+            // and corner to write thresholds to disabled panels, so they're in sync if they're
+            // turned back on.
+            switch(type)
+            {
+            case "up-left": return enabledPanels[0];
+            case "up": return enabledPanels[1];
+            case "up-right": return enabledPanels[2];
+            case "left": return enabledPanels[3];
+            case "center": return enabledPanels[4];
+            case "right": return enabledPanels[5];
+            case "down-left": return enabledPanels[6];
+            case "down": return enabledPanels[7];
+            case "down-right": return enabledPanels[8];
+
+            // Show cardinal and corner if at least one panel they affect is enabled.
+            case "cardinal": return enabledPanels[3] || enabledPanels[5] || enabledPanels[8];
+            case "corner": return enabledPanels[0] || enabledPanels[2] || enabledPanels[6] || enabledPanels[8];
+            default: return true;
+            }
+        }
+
+        ThresholdSlider CreateThresholdSlider(string type)
+        {
+            ThresholdSlider slider = new ThresholdSlider();
+            slider.Type = type;
+            return slider;
+        }
+
+        void CreateThresholdSliders()
+        {
+            // Remove and recreate threshold sliders.
+            ThresholdSliderContainer.Children.Clear();
+            foreach(string sliderName in ThresholdSettings.thresholdSliderNames)
+            {
+                if(!IsThresholdSliderShown(sliderName))
+                    continue;
+
+                ThresholdSlider slider = CreateThresholdSlider(sliderName);
+                DockPanel.SetDock(slider, Dock.Top);
+                slider.Margin = new Thickness(0, 8, 0, 0);
+                ThresholdSliderContainer.Children.Add(slider);
+            }
+
+            ThresholdSettings.SyncSliderThresholds();
         }
 
         public override void OnApplyTemplate()
@@ -367,6 +439,11 @@ namespace smx_config
             }
             //Useless for pro players
             //ThresholdWarningText.Visibility = ShowThresholdWarningText ? Visibility.Visible : Visibility.Hidden;
+            // If a device has connected or disconnected, refresh the displayed threshold
+            // sliders.  Don't do this otherwise, or we'll do this when the sliders are
+            // dragged.
+            if(args.ConnectionsChanged)
+                CreateThresholdSliders();
 
             // If a second controller has connected and we're on Both, see if we need to prompt
             // to sync configs.  We only actually need to do this if a controller just connected.
@@ -428,7 +505,7 @@ namespace smx_config
             {
                 SMX.SMXConfig config = activePad.Item2;
 
-                bool uploadsSupported = config.masterVersion >= 4;
+                bool uploadsSupported = config.IsNewGen();
                 LeaveRunning.Visibility = uploadsSupported ? Visibility.Collapsed : Visibility.Visible;
                 break;
             }
@@ -658,7 +735,7 @@ namespace smx_config
                 if(!SMX.SMX.GetConfig(pad, out config))
                     continue;
 
-                if(config.masterVersion >= 4)
+                if(config.IsNewGen())
                     UploadLatestGIF();
 
                 break;

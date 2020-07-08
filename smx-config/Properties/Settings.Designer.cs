@@ -70,17 +70,5 @@ namespace smx_config.Properties {
                 this["UseOuterSensorThresholds"] = value;
             }
         }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool AdvancedMode {
-            get {
-                return ((bool)(this["AdvancedMode"]));
-            }
-            set {
-                this["AdvancedMode"] = value;
-            }
-        }
     }
 }

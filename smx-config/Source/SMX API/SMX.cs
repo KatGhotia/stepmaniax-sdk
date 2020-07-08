@@ -109,27 +109,21 @@ namespace SMX
         }
 
         // Return true if the platform is using FSRs, or false for load cells.
-        public bool fsr()
+        public bool isFSR()
         {
-            return masterVersion >= 4 && (configFlags & SMXConfigFlags.PlatformFlags_FSR) != 0;
+            return IsNewGen() && (configFlags & SMXConfigFlags.PlatformFlags_FSR) != 0;
         }
 
-        // Return true if the low threshold is set too low.
-        //
-        // Higher low threshold values make the panel respond to the panel being released more
-        // quickly.  It shouldn't be set too low.
-        public bool ShowThresholdWarning(int panel, int sensor)
+        //Return true if the pad is "new generation". There was huge changes betwee Gen1-3 and Gen4+. This is useful for the tools to know this sometimes.
+        public bool IsNewGen()
         {
-            if(!fsr())
-                return false;
+            return masterVersion >= 4;
+        }
 
-            // Don't show warnings for disabled panels.
-            if(!GetEnabledPanels()[panel])
-                return false;
-
-            int lower = panelSettings[panel].fsrLowThreshold[sensor];
-            int MinimumRecommendedLowThreshold = 140;
-            return lower < MinimumRecommendedLowThreshold;
+        //Return true if the platform have 9 panels (gen 2 and above)
+        public bool HasAllPanels()
+        {
+            return masterVersion != 0xFF && masterVersion >= 2;
         }
 
         // enabledSensors is a mask of which panels are enabled.  Return this as an array
