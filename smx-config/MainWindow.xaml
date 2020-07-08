@@ -984,7 +984,7 @@ Input will be disabled from deselected panels.</TextBlock>
                                     xml:space="preserve" FontSize="16">Advanced values</TextBlock>
                     <TextBlock xml:space="preserve" HorizontalAlignment="Center" Margin="0,0,0,0" TextAlignment="Center" Foreground="#FF0000" FontSize="15">WARNING : These value was not designed to be changed.
 Modify them if you know EXACTLY what you are doing.
-For turing off Auto Calibration, set "AutoCalib Max Tare" to 0</TextBlock>
+For turing off Auto Calibration, set "AutoCalib Max Tare" to 1</TextBlock>
                     <Separator Margin="0,10,0,10" />
                     
                     <StackPanel HorizontalAlignment="Left" Margin="20,0,20,0" Orientation="Vertical" Width="470">
@@ -1016,7 +1016,7 @@ For turing off Auto Calibration, set "AutoCalib Max Tare" to 0</TextBlock>
                         <TextBox x:Name="AutoCalibSamplesBox" xml:space="preserve" Width="50" Margin="0,-15,0,0" HorizontalAlignment="Right" TextAlignment="Left">500</TextBox>
                     </StackPanel>
                     <StackPanel HorizontalAlignment="Left" Margin="20,0,20,0" Orientation="Vertical" Width="470">
-                        <TextBlock xml:space="preserve" TextAlignment="Left" Foreground="#00AA00">AutoCalib Max Tare [0-65535] (default : 65535) (0 = no auto calibration)</TextBlock>
+                        <TextBlock xml:space="preserve" TextAlignment="Left">AutoCalib Max Tare [1-16383] (default : Max)</TextBlock>
                         <TextBox x:Name="AutoCalibMaxTare" xml:space="preserve" Width="50" Margin="0,-15,0,0" HorizontalAlignment="Right" TextAlignment="Left">65535</TextBox>
                     </StackPanel>
                     <Separator Margin="0,10,0,10" />

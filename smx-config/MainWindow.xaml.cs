@@ -416,7 +416,11 @@ namespace smx_config
             AutoCalibMaxDeviationBox.Text = firstConfig.autoCalibrationMaxDeviation.ToString();
             AutoCalibAverageBox.Text = firstConfig.autoCalibrationAveragesPerUpdate.ToString();
             AutoCalibSamplesBox.Text = firstConfig.autoCalibrationSamplesPerAverage.ToString();
-            AutoCalibMaxTare.Text = firstConfig.autoCalibrationMaxTare.ToString();
+            var maxTare = firstConfig.autoCalibrationMaxTare;
+            if (maxTare == UInt16.MaxValue)
+                AutoCalibMaxTare.Text = "Max";
+            else
+                AutoCalibMaxTare.Text = (firstConfig.autoCalibrationMaxTare / 4).ToString(); //device by 4 avoid "bad jumpers" error
 
             // Show the color slider or GIF UI depending on which one is set in flags.
             // If both pads are turned on, just use the first one.
@@ -642,29 +646,12 @@ namespace smx_config
             }
         }
 
-
-        List<Tuple<TextBox, string>> m_textBoxValues = null;
         private void UpdateAdvancedValues_Click(object sender, RoutedEventArgs e)
         {
             foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
             {
                 int pad = activePad.Item1;
                 SMX.SMXConfig config = activePad.Item2;
-
-                if (m_textBoxValues == null)
-                {
-                    m_textBoxValues = new List<Tuple<TextBox, string>>()
-                    {
-                        new Tuple<TextBox, string>(DebounceNodelayBox, "Debounce Nodelay"),
-                        new Tuple<TextBox, string>(DebounceDelayBox, "Debounce Delay"),
-                        new Tuple<TextBox, string>(PanelDebounceBox, "Panel Debounce"),
-                        new Tuple<TextBox, string>(BadSensorBox, "Bad sensor"),
-                        new Tuple<TextBox, string>(AutoCalibMaxDeviationBox, "AutoCalib Max Deviation"),
-                        new Tuple<TextBox, string>(AutoCalibAverageBox, "AutoCalib Average per Update"),
-                        new Tuple<TextBox, string>(AutoCalibSamplesBox, "AutoCalib Samples per Average"),
-                        new Tuple<TextBox, string>(AutoCalibMaxTare, "AutoCalib Max Tare"),
-                    };
-                }
 
                 string error = null;
                 config.debounceNodelayMilliseconds = TryParseShortTextData(DebounceNodelayBox, "Debounce Nodelay", ref error);
@@ -674,7 +661,17 @@ namespace smx_config
                 config.autoCalibrationMaxDeviation = TryParseByteTextData(AutoCalibMaxDeviationBox, "AutoCalib Max Deviation", ref error);
                 config.autoCalibrationAveragesPerUpdate = TryParseShortTextData(AutoCalibAverageBox, "AutoCalib Average per Update", ref error);
                 config.autoCalibrationSamplesPerAverage = TryParseShortTextData(AutoCalibSamplesBox, "AutoCalib Samples per Average", ref error);
-                config.autoCalibrationMaxTare = TryParseShortTextData(AutoCalibMaxTare, "AutoCalib Max Tare", ref error);
+                var maxTare = AutoCalibMaxTare.Text == "Max" ? UInt16.MaxValue : TryParseShortTextData(AutoCalibMaxTare, "AutoCalib Max Tare", ref error);
+
+                if(maxTare < UInt16.MaxValue)
+                {
+                    if (maxTare < 1)
+                        maxTare = 1;
+                    else if (maxTare / 4 >= UInt16.MaxValue)
+                        maxTare = UInt16.MaxValue;
+                }
+                
+                config.autoCalibrationMaxTare = maxTare == UInt16.MaxValue ? maxTare : (ushort) (maxTare * 4);
 
                 if (!string.IsNullOrEmpty(error))
                 {
@@ -684,7 +681,7 @@ namespace smx_config
                 else
                 {
                     SMX.SMX.SetConfig(pad, config);
-                    AdvancedValueError.Text = "Updated at " + DateTime.Now.ToLongTimeString();
+                    AdvancedValueError.Text = "Correctly updated at " + DateTime.Now.ToLongTimeString();
                     AdvancedValueError.Foreground = (SolidColorBrush)(new BrushConverter().ConvertFrom("#00AA00"));
                 }
             }

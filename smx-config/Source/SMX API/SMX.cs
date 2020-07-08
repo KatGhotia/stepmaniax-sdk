@@ -56,6 +56,8 @@ namespace SMX
         // Packed flags (SMXConfigFlags).
         public Byte flags;
 
+        //It would be nice if these variable were documented. I understand that fact the user should never touch it
+        //But as a developper it's pretty frustrating to not know what's about. Maybe it can be useful for some reason.
         public UInt16 debounceNodelayMilliseconds;
         public UInt16 debounceDelayMs;
         public UInt16 panelDebounceMicroseconds;
@@ -63,6 +65,11 @@ namespace SMX
         public Byte badSensorMinimumDelaySeconds;
         public UInt16 autoCalibrationAveragesPerUpdate;
         public UInt16 autoCalibrationSamplesPerAverage;
+
+        //So, here it is, the devil value that all ITG pro players doesn't like. I don't really know what other auto calibration variables means,
+        //so i decided to go with the more explicit one to "hack" the auto calibration system, and finally shut it down.
+        //Max tare seems to be a value between 0 and 65565 (max ushort), as 65565 is the default value. However, set a non-binary value will trigger the "bad jumpers" error.
+        //So I recommand to put only power of 4 values in it. In the Enhanced config too, I do the automatic conversion between "classic" value and POF values, to avoid user panic.
         public UInt16 autoCalibrationMaxTare;
 
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 5)]
