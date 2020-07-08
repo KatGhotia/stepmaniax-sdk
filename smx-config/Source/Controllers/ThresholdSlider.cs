@@ -81,18 +81,6 @@ namespace smx_config
                 dialog.ShowDialog();
             };
 
-            Loaded += delegate (object sender, RoutedEventArgs e)
-            {
-                for (int pad = 0; pad < 2; ++pad)
-                    SMX.SMX.SetSensorTestMode(pad, SMX.SMX.SensorTestMode.CalibratedValues);
-            };
-
-            Unloaded += delegate (object sender, RoutedEventArgs e)
-            {
-                for (int pad = 0; pad < 2; ++pad)
-                    SMX.SMX.SetSensorTestMode(pad, SMX.SMX.SensorTestMode.Off);
-            };
-
             onConfigChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args) {
                 LoadUIFromConfig(ActivePad.GetFirstActivePadConfig(args));
             });
