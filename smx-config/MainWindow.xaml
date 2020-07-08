@@ -995,7 +995,7 @@ For turing off Auto Calibration, set "AutoCalib Max Tare" to 0</TextBlock>
                 </StackPanel>
             </TabItem>
 
-            <TabItem Header="Colors">
+            <TabItem x:Name="ColorTab" Header="Colors">
                 <Grid Background="#FFE5E5E5" RenderTransformOrigin="0.5,0.5">
                     <StackPanel Margin="0,20,0,0" VerticalAlignment="Top" Grid.ColumnSpan="3">
 

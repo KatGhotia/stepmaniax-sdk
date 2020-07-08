@@ -431,7 +431,6 @@ namespace smx_config
 
             RefreshConnectedPadList(args);
             RefreshUploadPadText(args);
-            RefreshSelectedColorPicker();
 
             // Show the threshold warning explanation if any panels are showing the threshold warning icon.
             bool ShowThresholdWarningText = false;
@@ -817,6 +816,10 @@ namespace smx_config
 
                 for (int pad = 0; pad < 2; ++pad)
                     SMX.SMX.SetSensorTestMode(pad, SMX.SMX.SensorTestMode.CalibratedValues);
+            }
+            else if(Main.SelectedItem == ColorTab)
+            {
+                RefreshSelectedColorPicker();
             }
             else
             {

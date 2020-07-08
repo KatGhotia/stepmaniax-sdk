@@ -10,7 +10,6 @@ using System.Collections.Generic;
 
 namespace smx_config
 {
-
     // This is the Slider inside a ColorPicker.
     public class ColorPickerSlider : Slider2
     {
@@ -87,7 +86,7 @@ namespace smx_config
         bool UpdatingUI = false;
         private void LoadUIFromConfig(LoadFromConfigDelegateArgs args)
         {
-            if (UpdatingUI || _colorButton == null)
+            if (UpdatingUI || _colorButton == null || HueSlider == null)
                 return;
 
             // Make sure SaveToConfig doesn't treat these as the user changing values.
