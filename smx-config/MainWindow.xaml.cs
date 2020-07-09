@@ -416,11 +416,8 @@ namespace smx_config
             AutoCalibMaxDeviationBox.Text = firstConfig.autoCalibrationMaxDeviation.ToString();
             AutoCalibAverageBox.Text = firstConfig.autoCalibrationAveragesPerUpdate.ToString();
             AutoCalibSamplesBox.Text = firstConfig.autoCalibrationSamplesPerAverage.ToString();
-            var maxTare = firstConfig.autoCalibrationMaxTare;
-            if (maxTare == UInt16.MaxValue)
-                AutoCalibMaxTare.Text = "Max";
-            else
-                AutoCalibMaxTare.Text = (firstConfig.autoCalibrationMaxTare / 4).ToString(); //device by 4 avoid "bad jumpers" error
+            AutoCalibMaxTare.Text = firstConfig.autoCalibrationMaxTare.ToString();
+            AutoCalibButton.Content = firstConfig.autoCalibrationMaxTare == 16 ? "Enable Auto Calibration" : "Disable Auto Calibration";
 
             // Show the color slider or GIF UI depending on which one is set in flags.
             // If both pads are turned on, just use the first one.
@@ -661,17 +658,7 @@ namespace smx_config
                 config.autoCalibrationMaxDeviation = TryParseByteTextData(AutoCalibMaxDeviationBox, "AutoCalib Max Deviation", ref error);
                 config.autoCalibrationAveragesPerUpdate = TryParseShortTextData(AutoCalibAverageBox, "AutoCalib Average per Update", ref error);
                 config.autoCalibrationSamplesPerAverage = TryParseShortTextData(AutoCalibSamplesBox, "AutoCalib Samples per Average", ref error);
-                var maxTare = AutoCalibMaxTare.Text == "Max" ? UInt16.MaxValue : TryParseShortTextData(AutoCalibMaxTare, "AutoCalib Max Tare", ref error);
-
-                if(maxTare < UInt16.MaxValue)
-                {
-                    if (maxTare < 1)
-                        maxTare = 1;
-                    else if (maxTare / 4 >= UInt16.MaxValue)
-                        maxTare = UInt16.MaxValue;
-                }
-                
-                config.autoCalibrationMaxTare = maxTare == UInt16.MaxValue ? maxTare : (ushort) (maxTare * 4);
+                config.autoCalibrationMaxTare = TryParseShortTextData(AutoCalibMaxTare, "AutoCalib Max Tare", ref error);
 
                 if (!string.IsNullOrEmpty(error))
                 {
@@ -712,6 +699,19 @@ namespace smx_config
                 return result;
             error = "Update failed : " + title + " has a wrong value";
             return default;
+        }
+
+        private void AutoCalibButton_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
+            {
+                int pad = activePad.Item1;
+                SMX.SMXConfig config = activePad.Item2;
+
+                config.autoCalibrationMaxTare = config.autoCalibrationMaxTare == 16 ? ushort.MaxValue : (ushort)16;
+                SMX.SMX.SetConfig(pad, config);
+            }
+            CurrentSMXDevice.singleton.FireConfigurationChanged(null);
         }
 
         private void FactoryReset_Click(object sender, RoutedEventArgs e)
@@ -888,23 +888,24 @@ namespace smx_config
 
         private void MainTab_Selected(object sender, RoutedEventArgs e)
         {
-            if(Main.SelectedItem == SensitivityTab)
+            if (Main.SelectedItem == ColorTab)
+            {
+                RefreshSelectedColorPicker();
+            }
+
+            if (Main.SelectedItem == SensitivityTab)
             {
                 // Refresh the threshold sliders, in case the enabled panels were changed
                 // on the advanced tab.
                 CreateThresholdSliders();
 
-                /*for (int pad = 0; pad < 2; ++pad)
-                    SMX.SMX.SetSensorTestMode(pad, SMX.SMX.SensorTestMode.CalibratedValues);*/
+                for (int pad = 0; pad < 2; ++pad)
+                    SMX.SMX.SetSensorTestMode(pad, SMX.SMX.SensorTestMode.CalibratedValues, "MainWindow");
             }
-            else if(Main.SelectedItem == ColorTab)
+            else if(Main.SelectedItem != DiagnosticTab)
             {
-                RefreshSelectedColorPicker();
-            }
-            else
-            {
-                /*for (int pad = 0; pad < 2; ++pad)
-                    SMX.SMX.SetSensorTestMode(pad, SMX.SMX.SensorTestMode.Off);*/
+                for (int pad = 0; pad < 2; ++pad)
+                    SMX.SMX.SetSensorTestMode(pad, SMX.SMX.SensorTestMode.Off, "MainWindow");
             }
         }
     }

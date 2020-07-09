@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using smx_config;
 
@@ -524,10 +525,43 @@ namespace SMX
         //Avoid multiple call for the same test mode (make the call of some multiples controls easier)
         private static bool[] m_sensorHasBeenSetOnce = new bool[2] { false, false };
         private static SensorTestMode[] m_currentMode = new SensorTestMode[2] { SensorTestMode.Off, SensorTestMode.Off };
-        public static void SetSensorTestMode(int pad, SensorTestMode mode)
+        private static Dictionary<string, SensorTestMode> m_modeBySource = new Dictionary<string, SensorTestMode>();
+
+        //Cas 1
+        //Off  Test1
+        //Test1 Test1
+        //Test1 Off
+
+        //Cas 2
+        //Off Test1
+        //Off Off
+        //Test1 Off
+
+        //Cas 3
+        //Off Test1
+        //Off Test2
+
+        public static void SetSensorTestMode(int pad, SensorTestMode mode, string source = null)
         {
             if(!DLLAvailable()) return;
+
+            if (!string.IsNullOrEmpty(source))
+            {
+                m_modeBySource[source] = mode;
+                foreach(var kvp in m_modeBySource)
+                {
+                    if (kvp.Key == source)
+                        continue;
+
+                    //Tried to disable test mode but another source set it to something else
+                    if (mode == SensorTestMode.Off && kvp.Value != SensorTestMode.Off)
+                        return;
+                }
+            }
+
             if (m_sensorHasBeenSetOnce[pad] && mode == m_currentMode[pad]) return;
+
+
             SMX_SetTestMode(pad, (int) mode);
             m_currentMode[pad] = mode;
             m_sensorHasBeenSetOnce[pad] = true;

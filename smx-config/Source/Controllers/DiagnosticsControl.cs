@@ -163,7 +163,7 @@ namespace smx_config
             DiagnosticMode.AddHandler(ComboBox.SelectionChangedEvent, new RoutedEventHandler(delegate(object sender, RoutedEventArgs e)
             {
                 for(int pad = 0; pad < 2; ++pad)
-                    SMX.SMX.SetSensorTestMode(pad, GetTestMode());
+                    SMX.SMX.SetSensorTestMode(pad, GetTestMode(), "Diagnostics");
             }));
 
             OnConfigChange onConfigChange;
@@ -175,13 +175,13 @@ namespace smx_config
             Loaded += delegate(object sender, RoutedEventArgs e)
             {
                 for(int pad = 0; pad < 2; ++pad)
-                    SMX.SMX.SetSensorTestMode(pad, GetTestMode());
+                    SMX.SMX.SetSensorTestMode(pad, GetTestMode(), "Diagnostics");
             };
 
             Unloaded += delegate(object sender, RoutedEventArgs e)
             {
                 for(int pad = 0; pad < 2; ++pad)
-                    SMX.SMX.SetSensorTestMode(pad, SMX.SMX.SensorTestMode.Off);
+                    SMX.SMX.SetSensorTestMode(pad, SMX.SMX.SensorTestMode.Off, "Diagnostics");
             };
         }
 

@@ -53,10 +53,10 @@ namespace smx_config
         Label LowerLabel, UpperLabel;
         //Image ThresholdWarning;
         PlatformSensorDisplay SensorDisplay;
-        //LevelBar SensorBar;
+        LevelBar SensorBar;
 
         OnConfigChange onConfigChange;
-        //OnConfigChange onConfigInputChange;
+        OnConfigChange onConfigInputChange;
 
         public override void OnApplyTemplate()
         {
@@ -67,7 +67,7 @@ namespace smx_config
             UpperLabel = GetTemplateChild("UpperValue") as Label;
             //ThresholdWarning = GetTemplateChild("ThresholdWarning") as Image;
             SensorDisplay = GetTemplateChild("PlatformSensorDisplay") as PlatformSensorDisplay;
-            //SensorBar = GetTemplateChild("SensorBar") as LevelBar;
+            SensorBar = GetTemplateChild("SensorBar") as LevelBar;
 
             slider.ValueChanged += delegate (DoubleSlider slider) { SaveToConfig(); };
 
@@ -85,20 +85,20 @@ namespace smx_config
                 LoadUIFromConfig(ActivePad.GetFirstActivePadConfig(args));
             });
             
-           /* onConfigInputChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args) {
+            onConfigInputChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args) {
                 Refresh(args);
             });
-            onConfigInputChange.RefreshOnInputChange = true;*/
+            onConfigInputChange.RefreshOnTestDataChange = true;
         }
 
-        /*private void Refresh(LoadFromConfigDelegateArgs args)
+        private void Refresh(LoadFromConfigDelegateArgs args)
         {
             if (SensorDisplay.GetSoloSensorWorking(out int activePanel, out int activeSensor))
             {
                 SensorBar.Visibility = Visibility.Visible;
                 int selectedPad = ActivePad.selectedPad == ActivePad.SelectedPad.P2 ? 1 : 0;
                 var controllerData = args.controller[selectedPad];
-                int sensorIndex = activePanel * 4 + activeSensor;
+                int sensorIndex = (activePanel * 4) + activeSensor;
                 if (!controllerData.test_data.bHaveDataFromPanel[activePanel] || args.controller[selectedPad].test_data.bBadSensorInput[sensorIndex])
                 {
                     SensorBar.Value = 0;
@@ -121,7 +121,7 @@ namespace smx_config
             {
                 SensorBar.Visibility = Visibility.Hidden;
             }
-        }*/
+        }
 
         private void RefreshSliderActiveProperty()
         {
