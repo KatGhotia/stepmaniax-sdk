@@ -86,30 +86,32 @@ namespace smx_config
             }
         }
 
-        public bool GetSoloSensorWorking(out int activePanel, out int activeSensor)
+        public bool GetHighestSensorFromActivatedSensors(LoadFromConfigDelegateArgsPerController controllerData, out int activePanel, out int activeSensor)
         {
-            bool sensorFound = false;
             activePanel = -1;
             activeSensor = -1;
+            short sensorValue = -1;
             for (int panel = 0; panel < 9; ++panel)
             {
                 for (int sensor = 0; sensor < 4; ++sensor)
                 {
                     if (GetSensor(panel, sensor).Highlight == 2)
                     {
-                        //If the slider controls more than one sensor, it returns false
-                        if (sensorFound)
-                            return false;
-                        else
+                        if (controllerData.test_data.HasSensorValid(panel, sensor))
                         {
-                            activePanel = panel;
-                            activeSensor = sensor;
-                            sensorFound = true;
+                            int sensorIndex = (panel * 4) + sensor;
+                            short sensorValueComp = controllerData.test_data.sensorLevel[sensorIndex];
+                            if (sensorValueComp >= sensorValue)
+                            {
+                                activePanel = panel;
+                                activeSensor = sensor;
+                                sensorValue = sensorValueComp;
+                            }
                         }
                     }
                 }
             }
-            return sensorFound;
+            return activePanel > 0 && activeSensor > 0;
         }
     }
 }

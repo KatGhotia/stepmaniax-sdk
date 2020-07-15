@@ -239,11 +239,11 @@ Use if the platform is too sensitive.</clr:String>
                                    Visibility="{Binding Path=SliderActive, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource BooleanToVisibilityConverter}}"
                             />
                             <controls:DoubleSlider x:Name="Slider"
-                                Margin="25,0,0,0"
+                                Margin="35,0,0,0"
                                 MinimumDistance="10"
                                 LowerValue="20" UpperValue="35"
                                 VerticalAlignment="Top"
-                                Width="390"
+                                Width="380"
                                 Focusable="False"
                                 Style="{DynamicResource DoubleSlider}"
                                 IsEnabled="{Binding Path=SliderActive, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
@@ -253,7 +253,7 @@ Use if the platform is too sensitive.</clr:String>
                                 Visibility="{Binding Path=SliderActive, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource BooleanToVisibilityConverter}}"
                             />
                             <controls:LevelBar x:Name="SensorBar" Margin="40,18,5,0" Style="{DynamicResource HorizontalLB}"/>
-
+                            
                             <!-- This is only shown for inner-sensors and outer-sensors.  It's always hidden and
                                  checked for other sliders. -->
                             <controls:ThresholdEnabledButton
@@ -530,7 +530,7 @@ Use if the platform is too sensitive.</clr:String>
                                 x:Name="Back"
                                 Width="390" Height="8" Fill="#FF000000"
                                    HorizontalAlignment="Center"
-                                   Stroke="Black" StrokeThickness="1" 
+                                   Stroke="#000000" StrokeThickness="1" 
                                 Margin="0,0,0,0"
                             />
 
@@ -538,7 +538,23 @@ Use if the platform is too sensitive.</clr:String>
                             <Rectangle
                                 x:Name="Fill"
                                 Margin="1,0,1,0"
-                                Width="390" Height="6" Fill="#FF00FF00"
+                                Width="390" Height="6" Fill="#FFFFFF00"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                            />
+
+                            <Rectangle
+                                x:Name="Lower"
+                                Margin="60,0,1,0"
+                                Width="1" Height="10" Fill="Blue"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                            />
+                            
+                            <Rectangle
+                                x:Name="Higher"
+                                Margin="65,0,1,0"
+                                Width="1" Height="10" Fill="#FF00AAFF"
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
                             />
@@ -571,6 +587,22 @@ Use if the platform is too sensitive.</clr:String>
                                 Margin="0,0,0,1"
                                 Width="33" Height="100" Fill="#FF00FF00"
                                 HorizontalAlignment="Center"
+                                VerticalAlignment="Bottom"
+                            />
+
+                            <Rectangle
+                                x:Name="Lower"
+                                Margin="0,0,0,15"
+                                Width="35" Height="1" Fill="#FF0000FF"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Bottom"
+                            />
+
+                            <Rectangle
+                                x:Name="Higher"
+                                Margin="0,0,0,10"
+                                Width="35" Height="1" Fill="#FF00AAFF"
+                                HorizontalAlignment="Left"
                                 VerticalAlignment="Bottom"
                             />
                         </Grid>

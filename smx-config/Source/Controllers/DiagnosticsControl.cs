@@ -280,6 +280,7 @@ namespace smx_config
                         value >>= 2;
                     float maxValue = isFSR? 250:500;
                     LevelBars[sensor].Value = value / maxValue;
+                    LevelBars[sensor].PanelActive = args.controller[SelectedPad].inputs[PanelIndex];
                     LevelBarText[sensor].Content = value;
                     LevelBars[sensor].Error = false;
                 }

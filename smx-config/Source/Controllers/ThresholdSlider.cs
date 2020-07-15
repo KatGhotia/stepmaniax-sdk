@@ -89,22 +89,24 @@ namespace smx_config
                 Refresh(args);
             });
             onConfigInputChange.RefreshOnTestDataChange = true;
+            onConfigInputChange.RefreshOnInputChange = true;
         }
 
         private void Refresh(LoadFromConfigDelegateArgs args)
         {
-            if (SensorDisplay.GetSoloSensorWorking(out int activePanel, out int activeSensor))
+            int selectedPad = ActivePad.selectedPad == ActivePad.SelectedPad.P2 ? 1 : 0;
+            var controllerData = args.controller[selectedPad];
+
+            if (SensorDisplay.GetHighestSensorFromActivatedSensors(controllerData, out int activePanel, out int activeSensor))
             {
                 SensorBar.Visibility = Visibility.Visible;
-                int selectedPad = ActivePad.selectedPad == ActivePad.SelectedPad.P2 ? 1 : 0;
-                var controllerData = args.controller[selectedPad];
-                int sensorIndex = (activePanel * 4) + activeSensor;
-                if (!controllerData.test_data.bHaveDataFromPanel[activePanel] || args.controller[selectedPad].test_data.bBadSensorInput[sensorIndex])
+                if (!controllerData.test_data.HasSensorValid(activePanel, activeSensor))
                 {
                     SensorBar.Value = 0;
                     return;
                 }
 
+                int sensorIndex = (activePanel * 4) + activeSensor;
                 Int16 value = controllerData.test_data.sensorLevel[sensorIndex];
 
                 if (value < 0)
@@ -116,6 +118,7 @@ namespace smx_config
                     value >>= 2;
                 float maxValue = isFSR ? 250 : 500;
                 SensorBar.Value = value / maxValue;
+                SensorBar.PanelActive = controllerData.inputs[activePanel];
             }
             else
             {
@@ -234,6 +237,8 @@ namespace smx_config
             {
                 LowerLabel.Content = "Off";
                 UpperLabel.Content = "";
+                SensorBar.LowerThreshold = 0.5;
+                SensorBar.HigherThreshold = 0.5;
             }
             else
             {
@@ -241,7 +246,10 @@ namespace smx_config
                 slider.UpperValue = upper;
                 LowerLabel.Content = lower.ToString();
                 UpperLabel.Content = upper.ToString();
+                SensorBar.LowerThreshold = (lower - slider.Minimum) / (slider.Maximum - slider.Minimum);
+                SensorBar.HigherThreshold = (upper - slider.Minimum) / (slider.Maximum - slider.Minimum);
             }
+
 
             List<ThresholdSettings.PanelAndSensor> controlledSensors = GetControlledSensors(config, false);
 
