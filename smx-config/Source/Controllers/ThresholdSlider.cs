@@ -237,8 +237,8 @@ namespace smx_config
             {
                 LowerLabel.Content = "Off";
                 UpperLabel.Content = "";
-                SensorBar.LowerThreshold = 0.5;
-                SensorBar.HigherThreshold = 0.5;
+                SensorBar.LowerThreshold = 1;
+                SensorBar.HigherThreshold = 1;
             }
             else
             {

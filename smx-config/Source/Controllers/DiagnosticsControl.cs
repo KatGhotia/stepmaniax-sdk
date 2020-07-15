@@ -281,6 +281,9 @@ namespace smx_config
                     float maxValue = isFSR? 250:500;
                     LevelBars[sensor].Value = value / maxValue;
                     LevelBars[sensor].PanelActive = args.controller[SelectedPad].inputs[PanelIndex];
+                    GetThresholdFromSensor(config, PanelIndex, sensor, out int lower, out int upper);
+                    LevelBars[sensor].LowerThreshold = ((float)lower) / maxValue;
+                    LevelBars[sensor].HigherThreshold = ((float)upper) / maxValue;
                     LevelBarText[sensor].Content = value;
                     LevelBars[sensor].Error = false;
                 }
@@ -297,7 +300,24 @@ namespace smx_config
             }
 
         }
-        
+
+
+        private void GetThresholdFromSensor(SMX.SMXConfig config, int panel, int sensor, out int lower, out int upper)
+        {
+            lower = upper = 0;
+
+            if (!config.isFSR())
+            {
+                lower = config.panelSettings[panel].loadCellLowThreshold;
+                upper = config.panelSettings[panel].loadCellHighThreshold;
+            }
+            else
+            {
+                lower = config.panelSettings[panel].fsrLowThreshold[sensor];
+                upper = config.panelSettings[panel].fsrHighThreshold[sensor];
+            }
+        }
+
         // If the selected panel isn't enabled for input, select another one.
         private void SelectValidPanel(SMX.SMXConfig config)
         {
