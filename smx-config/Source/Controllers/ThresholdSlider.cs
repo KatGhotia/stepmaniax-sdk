@@ -213,20 +213,12 @@ namespace smx_config
             RefreshSliderActiveProperty();
 
             // Set the range for the slider.
-            if (config.isFSR())
-            {
-                // 16-bit FSR thresholds.
-                slider.Minimum = 5;
-                slider.Maximum = 250;
-                slider.MinimumDistance = 2;
-            }
-            else
-            {
-                // 8-bit load cell thresholds
-                slider.Minimum = 20;
-                slider.Maximum = 200;
-                slider.MinimumDistance = 10;
-            }
+            // 16-bit FSR thresholds.
+            // 8-bit load cell thresholds
+            SMXHelpers.ThresholdDefinition def = SMXHelpers.GetThresholdDefinition(config.isFSR());
+            slider.Minimum = def.UserMin;
+            slider.Maximum = def.UserMax;
+            slider.MinimumDistance = def.MinRange;
 
             int lower, upper;
             GetValueFromConfig(config, out lower, out upper);
@@ -246,8 +238,8 @@ namespace smx_config
                 slider.UpperValue = upper;
                 LowerLabel.Content = lower.ToString();
                 UpperLabel.Content = upper.ToString();
-                SensorBar.LowerThreshold = (lower - slider.Minimum) / (slider.Maximum - slider.Minimum);
-                SensorBar.HigherThreshold = (upper - slider.Minimum) / (slider.Maximum - slider.Minimum);
+                SensorBar.LowerThreshold = (lower - def.RealMin) / (def.RealMax - def.RealMin);
+                SensorBar.HigherThreshold = (upper - def.RealMin) / (def.RealMax - def.RealMin);
             }
 
 

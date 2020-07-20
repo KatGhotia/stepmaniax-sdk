@@ -994,5 +994,23 @@ namespace smx_config
             if(customSensors != null)
                 ThresholdSettings.SetCustomSensorsJSON(customSensors);
         }
+
+        public struct ThresholdDefinition
+        {
+            public double UserMin;
+            public double UserMax;
+            public double RealMin;
+            public double RealMax;
+            public double MinRange;
+        }
+
+        private static ThresholdDefinition FSRThreshold = new ThresholdDefinition() { UserMin = 1, UserMax = 250, RealMin = 0, RealMax = 250, MinRange = 1 };
+        private static ThresholdDefinition LoadCellsThreshold = new ThresholdDefinition() { UserMin = 1, UserMax = 200, RealMin = 0, RealMax = 500, MinRange = 1 };
+
+
+        public static ThresholdDefinition GetThresholdDefinition(bool isFSR)
+        {
+            return isFSR ? FSRThreshold : LoadCellsThreshold;
+        }
     };
 }

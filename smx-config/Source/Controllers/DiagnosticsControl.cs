@@ -278,12 +278,16 @@ namespace smx_config
                     bool isFSR = controllerData.config.isFSR();
                     if(isFSR)
                         value >>= 2;
-                    float maxValue = isFSR? 250:500;
-                    LevelBars[sensor].Value = value / maxValue;
+
+                    SMXHelpers.ThresholdDefinition def = SMXHelpers.GetThresholdDefinition(config.isFSR());
+
+                    LevelBars[sensor].Value = value / def.RealMax;
                     LevelBars[sensor].PanelActive = args.controller[SelectedPad].inputs[PanelIndex];
+
                     GetThresholdFromSensor(config, PanelIndex, sensor, out int lower, out int upper);
-                    LevelBars[sensor].LowerThreshold = ((float)lower) / maxValue;
-                    LevelBars[sensor].HigherThreshold = ((float)upper) / maxValue;
+                    LevelBars[sensor].LowerThreshold = (((float)lower) - def.RealMin) / (def.RealMax - def.RealMin);
+                    LevelBars[sensor].HigherThreshold = (((float)upper) - def.RealMin) / (def.RealMax - def.RealMin);
+
                     LevelBarText[sensor].Content = value;
                     LevelBars[sensor].Error = false;
                 }
@@ -304,8 +308,6 @@ namespace smx_config
 
         private void GetThresholdFromSensor(SMX.SMXConfig config, int panel, int sensor, out int lower, out int upper)
         {
-            lower = upper = 0;
-
             if (!config.isFSR())
             {
                 lower = config.panelSettings[panel].loadCellLowThreshold;

@@ -90,14 +90,14 @@ namespace smx_config
         {
             activePanel = -1;
             activeSensor = -1;
-            short sensorValue = -1;
+            short sensorValue = short.MinValue;
             for (int panel = 0; panel < 9; ++panel)
             {
                 for (int sensor = 0; sensor < 4; ++sensor)
                 {
                     if (GetSensor(panel, sensor).Highlight == 2)
                     {
-                        if (controllerData.test_data.HasSensorValid(panel, sensor))
+                        if (controllerData.test_data.HasSensorValid(panel, sensor, checkData:false))
                         {
                             int sensorIndex = (panel * 4) + sensor;
                             short sensorValueComp = controllerData.test_data.sensorLevel[sensorIndex];
@@ -111,7 +111,7 @@ namespace smx_config
                     }
                 }
             }
-            return activePanel > 0 && activeSensor > 0;
+            return activePanel >= 0 && activeSensor >= 0;
         }
     }
 }

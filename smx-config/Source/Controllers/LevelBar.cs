@@ -94,8 +94,8 @@ namespace smx_config
             else //Vertical
             {
                 Fill.Height = Math.Round(Math.Max(FillVal, 0) * (Back.Height - 2));
-                m_lowerThickness.Bottom = Math.Max(LowerThreshold, 0) * Back.Width;
-                m_higherThickness.Bottom = Math.Max(HigherThreshold, 0) * Back.Width;
+                m_lowerThickness.Bottom = Math.Max(LowerThreshold, 0) * (Back.Height - 2);
+                m_higherThickness.Bottom = Math.Max(HigherThreshold, 0) * (Back.Height - 2);
             }
 
             Lower.Margin = m_lowerThickness;

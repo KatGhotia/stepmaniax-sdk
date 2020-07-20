@@ -307,9 +307,9 @@ namespace SMX
         // a hash code implementation.
         public override int GetHashCode() { return base.GetHashCode(); }
 
-        public bool HasSensorValid(int panel, int sensor)
+        public bool HasSensorValid(int panel, int sensor, bool checkData = true)
         {
-            if (!bHaveDataFromPanel[panel])
+            if (checkData && !bHaveDataFromPanel[panel])
                 return false;
             if (bBadSensorInput[panel * 4 + sensor])
                 return false;

@@ -239,11 +239,11 @@ Use if the platform is too sensitive.</clr:String>
                                    Visibility="{Binding Path=SliderActive, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource BooleanToVisibilityConverter}}"
                             />
                             <controls:DoubleSlider x:Name="Slider"
-                                Margin="35,0,0,0"
+                                Margin="45,0,0,0"
                                 MinimumDistance="10"
                                 LowerValue="20" UpperValue="35"
                                 VerticalAlignment="Top"
-                                Width="380"
+                                Width="370"
                                 Focusable="False"
                                 Style="{DynamicResource DoubleSlider}"
                                 IsEnabled="{Binding Path=SliderActive, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
@@ -592,7 +592,7 @@ Use if the platform is too sensitive.</clr:String>
 
                             <Rectangle
                                 x:Name="Lower"
-                                Margin="0,0,0,15"
+                                Margin="0,0,0,0"
                                 Width="35" Height="1" Fill="#FF0000FF"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Bottom"
@@ -600,7 +600,7 @@ Use if the platform is too sensitive.</clr:String>
 
                             <Rectangle
                                 x:Name="Higher"
-                                Margin="0,0,0,10"
+                                Margin="0,0,0,0"
                                 Width="35" Height="1" Fill="#FF00AAFF"
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Bottom"
