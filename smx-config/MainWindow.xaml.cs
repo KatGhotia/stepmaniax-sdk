@@ -462,9 +462,26 @@ namespace smx_config
             ConnectedPadList.Visibility = TwoControllersConnected ? Visibility.Visible : Visibility.Collapsed;
 
             // Only show the P1/P2 text if only one controller is connected, since it takes the place
-            // of the dropdown.
-            P1Connected.Visibility = (!TwoControllersConnected && args.controller[0].info.connected) ? Visibility.Visible : Visibility.Collapsed;
-            P2Connected.Visibility = (!TwoControllersConnected && args.controller[1].info.connected) ? Visibility.Visible : Visibility.Collapsed;
+            // of the dropdown. Make sure to set the selectedPad too in case callers use that to determine
+            // which pad is being configured.
+            if (!TwoControllersConnected && args.controller[0].info.connected)
+            {
+                P1Connected.Visibility = Visibility.Visible;
+                ActivePad.selectedPad = ActivePad.SelectedPad.P1;
+            } else
+            {
+                P1Connected.Visibility = Visibility.Collapsed;
+            }
+
+            if (!TwoControllersConnected && args.controller[1].info.connected)
+            {
+                P2Connected.Visibility = Visibility.Visible;
+                ActivePad.selectedPad = ActivePad.SelectedPad.P2;
+            }
+            else
+            {
+                P2Connected.Visibility = Visibility.Collapsed;
+            }
 
             if(!TwoControllersConnected)
                 return;
