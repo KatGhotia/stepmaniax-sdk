@@ -476,7 +476,7 @@ void SMX::SMXDevice::UpdateSensorTestMode()
     {
         // This request should be quick.  If we haven't received a response in a long
         // time, assume the request wasn't received.
-        if(now - m_SentSensorTestModeRequestAtTicks < 2000)
+        if(now - m_SentSensorTestModeRequestAtTicks < 30)
             return;
     }
 
