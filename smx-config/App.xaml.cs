@@ -11,6 +11,11 @@ namespace smx_config
         [DllImport("SMX.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern void SMX_Internal_OpenConsole();
 
+        [DllImport("kernel32.dll")]
+        public static extern bool SetStdHandle(int stdHandle, IntPtr handle);
+        [DllImport("kernel32.dll")]
+        public static extern bool AllocConsole();
+
         private System.Windows.Forms.NotifyIcon trayIcon;
         private MainWindow window;
 
@@ -24,11 +29,19 @@ namespace smx_config
             base.OnStartup(e);
 
             // If an instance is already running, foreground it and exit.
-            if(ForegroundExistingInstance())
+            if (ForegroundExistingInstance())
             {
                 Shutdown();
                 return;
             }
+
+            // Only create a console to show SMX.dll logs and other console logs if built for debug
+#if DEBUG
+            SetStdHandle(-10, IntPtr.Zero); // stdin
+            SetStdHandle(-11, IntPtr.Zero); // stdout
+            SetStdHandle(-12, IntPtr.Zero); // stderr
+            AllocConsole();
+#endif
 
             // This is used by the installer to close a running instance automatically when updating.
             ListenForShutdownRequest();
