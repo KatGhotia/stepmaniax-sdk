@@ -84,60 +84,6 @@ namespace smx_config
         }
     }
 
-    public class LevelBar: Control
-    {
-        public static readonly DependencyProperty ValueProperty = DependencyProperty.Register("Value",
-            typeof(double), typeof(LevelBar), new FrameworkPropertyMetadata(0.5, ValueChangedCallback));
-
-        public double Value {
-            get { return (double) GetValue(ValueProperty); }
-            set { SetValue(ValueProperty, value); }
-        }
-
-        public static readonly DependencyProperty ErrorProperty = DependencyProperty.Register("Error",
-            typeof(bool), typeof(LevelBar), new FrameworkPropertyMetadata(false, ValueChangedCallback));
-
-        public bool Error {
-            get { return (bool) GetValue(ErrorProperty); }
-            set { SetValue(ErrorProperty, value); }
-        }
-
-        private Rectangle Fill, Back;
-
-        private static void ValueChangedCallback(DependencyObject target, DependencyPropertyChangedEventArgs args)
-        {
-            LevelBar self = target as LevelBar;
-            self.Refresh();
-        }
-
-        public override void OnApplyTemplate()
-        {
-            base.OnApplyTemplate();
-
-            Fill = Template.FindName("Fill", this) as Rectangle;
-            Back = Template.FindName("Back", this) as Rectangle;
-            Refresh();
-        }
-
-        private void Refresh()
-        {
-            // If Error is true, fill the bar red.
-            double FillHeight = Error? 1:Value;
-            Fill.Height = Math.Round(Math.Max(FillHeight, 0) * (Back.Height - 2));
-
-            if(Error)
-            {
-                Fill.Fill = new SolidColorBrush(Color.FromRgb(255,0,0));
-            }
-            else
-            {
-                // Scale from green (#FF0000) to yellow (#FFFF00) as we go from 0 to .4.
-                double ColorValue = Value / 0.4;
-                Byte Yellow = (Byte) (Math.Max(0, Math.Min(255, ColorValue * 255)) );
-                Fill.Fill = new SolidColorBrush(Color.FromRgb(255,Yellow,0));
-            }
-        }
-    }
 
     public class DiagnosticsControl: Control
     {
@@ -217,7 +163,7 @@ namespace smx_config
             DiagnosticMode.AddHandler(ComboBox.SelectionChangedEvent, new RoutedEventHandler(delegate(object sender, RoutedEventArgs e)
             {
                 for(int pad = 0; pad < 2; ++pad)
-                    SMX.SMX.SetSensorTestMode(pad, GetTestMode());
+                    SMX.SMX.SetSensorTestMode(pad, GetTestMode(), "Diagnostics");
             }));
 
             OnConfigChange onConfigChange;
@@ -229,13 +175,13 @@ namespace smx_config
             Loaded += delegate(object sender, RoutedEventArgs e)
             {
                 for(int pad = 0; pad < 2; ++pad)
-                    SMX.SMX.SetSensorTestMode(pad, GetTestMode());
+                    SMX.SMX.SetSensorTestMode(pad, GetTestMode(), "Diagnostics");
             };
 
             Unloaded += delegate(object sender, RoutedEventArgs e)
             {
                 for(int pad = 0; pad < 2; ++pad)
-                    SMX.SMX.SetSensorTestMode(pad, SMX.SMX.SensorTestMode.Off);
+                    SMX.SMX.SetSensorTestMode(pad, SMX.SMX.SensorTestMode.Off, "Diagnostics");
             };
         }
 
@@ -288,7 +234,7 @@ namespace smx_config
             BadSensorDIPSwitches.Visibility = HaveIncorrectSensorDIP? Visibility.Visible:Visibility.Collapsed;
 
             // Adjust the DIP labels to match the PCB.
-            bool DIPLabelsOnLeft = config.masterVersion < 4;
+            bool DIPLabelsOnLeft = !config.IsNewGen();
             DIPLabelRight.Visibility = DIPLabelsOnLeft? Visibility.Collapsed:Visibility.Visible;
             DIPLabelLeft.Visibility = DIPLabelsOnLeft? Visibility.Visible:Visibility.Collapsed;
 
@@ -329,11 +275,19 @@ namespace smx_config
                         value = 0;
 
                     // Scale differently depending on if this is an FSR panel or a load cell panel.
-                    bool isFSR = controllerData.config.masterVersion >= 4 && (controllerData.config.configFlags & SMX.SMXConfigFlags.PlatformFlags_FSR) != 0;
+                    bool isFSR = controllerData.config.isFSR();
                     if(isFSR)
                         value >>= 2;
-                    float maxValue = isFSR? 250:500;
-                    LevelBars[sensor].Value = value / maxValue;
+
+                    SMXHelpers.ThresholdDefinition def = SMXHelpers.GetThresholdDefinition(config.isFSR());
+
+                    LevelBars[sensor].Value = value / def.RealMax;
+                    LevelBars[sensor].PanelActive = args.controller[SelectedPad].inputs[PanelIndex];
+
+                    GetThresholdFromSensor(config, PanelIndex, sensor, out int lower, out int upper);
+                    LevelBars[sensor].LowerThreshold = (((float)lower) - def.RealMin) / (def.RealMax - def.RealMin);
+                    LevelBars[sensor].HigherThreshold = (((float)upper) - def.RealMin) / (def.RealMax - def.RealMin);
+
                     LevelBarText[sensor].Content = value;
                     LevelBars[sensor].Error = false;
                 }
@@ -350,7 +304,22 @@ namespace smx_config
             }
 
         }
-        
+
+
+        private void GetThresholdFromSensor(SMX.SMXConfig config, int panel, int sensor, out int lower, out int upper)
+        {
+            if (!config.isFSR())
+            {
+                lower = config.panelSettings[panel].loadCellLowThreshold;
+                upper = config.panelSettings[panel].loadCellHighThreshold;
+            }
+            else
+            {
+                lower = config.panelSettings[panel].fsrLowThreshold[sensor];
+                upper = config.panelSettings[panel].fsrHighThreshold[sensor];
+            }
+        }
+
         // If the selected panel isn't enabled for input, select another one.
         private void SelectValidPanel(SMX.SMXConfig config)
         {
@@ -386,18 +355,4 @@ namespace smx_config
         }
     }
 
-    public class PanelTestModeCheckbox: CheckBox
-    {
-        public override void OnApplyTemplate()
-        {
-            base.OnApplyTemplate();
-        }
-
-        protected override void OnClick()
-        {
-            base.OnClick();
-
-            SMX.SMX.SetPanelTestMode((bool) IsChecked? SMX.SMX.PanelTestMode.PressureTest:SMX.SMX.PanelTestMode.Off);
-        }
-    }
 }

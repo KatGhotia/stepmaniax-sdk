@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using smx_config;
 
@@ -56,6 +57,8 @@ namespace SMX
         // Packed flags (SMXConfigFlags).
         public Byte flags;
 
+        //It would be nice if these variable were documented. I understand that fact the user should never touch it
+        //But as a developper it's pretty frustrating to not know what's about. Maybe it can be useful for some reason.
         public UInt16 debounceNodelayMilliseconds;
         public UInt16 debounceDelayMs;
         public UInt16 panelDebounceMicroseconds;
@@ -63,6 +66,11 @@ namespace SMX
         public Byte badSensorMinimumDelaySeconds;
         public UInt16 autoCalibrationAveragesPerUpdate;
         public UInt16 autoCalibrationSamplesPerAverage;
+
+        //So, here it is, the devil value that all ITG pro players doesn't like. I don't really know what other auto calibration variables means,
+        //so i decided to go with the more explicit one to "hack" the auto calibration system, and finally shut it down.
+        //Max tare seems to be a value between 0 and 65565 (max ushort), as 65565 is the default value. However, set a non-binary value will trigger the "bad jumpers" error.
+        //So I recommand to put only power of 4 values in it. In the Enhanced config too, I do the automatic conversion between "classic" value and POF values, to avoid user panic.
         public UInt16 autoCalibrationMaxTare;
 
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 5)]
@@ -109,27 +117,21 @@ namespace SMX
         }
 
         // Return true if the platform is using FSRs, or false for load cells.
-        public bool fsr()
+        public bool isFSR()
         {
-            return masterVersion >= 4 && (configFlags & SMXConfigFlags.PlatformFlags_FSR) != 0;
+            return IsNewGen() && (configFlags & SMXConfigFlags.PlatformFlags_FSR) != 0;
         }
 
-        // Return true if the low threshold is set too low.
-        //
-        // Higher low threshold values make the panel respond to the panel being released more
-        // quickly.  It shouldn't be set too low.
-        public bool ShowThresholdWarning(int panel, int sensor)
+        //Return true if the pad is "new generation". There was huge changes betwee Gen1-3 and Gen4+. This is useful for the tools to know this sometimes.
+        public bool IsNewGen()
         {
-            if(!fsr())
-                return false;
+            return masterVersion >= 4;
+        }
 
-            // Don't show warnings for disabled panels.
-            if(!GetEnabledPanels()[panel])
-                return false;
-
-            int lower = panelSettings[panel].fsrLowThreshold[sensor];
-            int MinimumRecommendedLowThreshold = 140;
-            return lower < MinimumRecommendedLowThreshold;
+        //Return true if the platform have 9 panels (gen 2 and above)
+        public bool HasAllPanels()
+        {
+            return masterVersion != 0xFF && masterVersion >= 2;
         }
 
         // enabledSensors is a mask of which panels are enabled.  Return this as an array
@@ -305,6 +307,15 @@ namespace SMX
         // a hash code implementation.
         public override int GetHashCode() { return base.GetHashCode(); }
 
+        public bool HasSensorValid(int panel, int sensor, bool checkData = true)
+        {
+            if (checkData && !bHaveDataFromPanel[panel])
+                return false;
+            if (bBadSensorInput[panel * 4 + sensor])
+                return false;
+
+            return true;
+        }
 
         public bool AnySensorsOnPanelNotResponding(int panel)
         {
@@ -520,10 +531,49 @@ namespace SMX
                 Tare = '3',
         };
 
-        public static void SetSensorTestMode(int pad, SensorTestMode mode)
+        //Avoid multiple call for the same test mode (make the call of some multiples controls easier)
+        private static bool[] m_sensorHasBeenSetOnce = new bool[2] { false, false };
+        private static SensorTestMode[] m_currentMode = new SensorTestMode[2] { SensorTestMode.Off, SensorTestMode.Off };
+        private static Dictionary<string, SensorTestMode> m_modeBySource = new Dictionary<string, SensorTestMode>();
+
+        //Cas 1
+        //Off  Test1
+        //Test1 Test1
+        //Test1 Off
+
+        //Cas 2
+        //Off Test1
+        //Off Off
+        //Test1 Off
+
+        //Cas 3
+        //Off Test1
+        //Off Test2
+
+        public static void SetSensorTestMode(int pad, SensorTestMode mode, string source = null)
         {
             if(!DLLAvailable()) return;
+
+            if (!string.IsNullOrEmpty(source))
+            {
+                m_modeBySource[source] = mode;
+                foreach(var kvp in m_modeBySource)
+                {
+                    if (kvp.Key == source)
+                        continue;
+
+                    //Tried to disable test mode but another source set it to something else
+                    if (mode == SensorTestMode.Off && kvp.Value != SensorTestMode.Off)
+                        return;
+                }
+            }
+
+            if (m_sensorHasBeenSetOnce[pad] && mode == m_currentMode[pad]) return;
+
+
             SMX_SetTestMode(pad, (int) mode);
+            m_currentMode[pad] = mode;
+            m_sensorHasBeenSetOnce[pad] = true;
         }
 
         public static bool GetTestData(int pad, out SMXSensorTestModeData data)

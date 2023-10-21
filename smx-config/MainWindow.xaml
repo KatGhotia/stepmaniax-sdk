@@ -7,7 +7,7 @@
         xmlns:controls="clr-namespace:smx_config"
         mc:Ignorable="d"
         x:Name="root"
-        Title="StepManiaX Platform"
+        Title="StepManiaX ConfigTool Pro (by BNKT)"
         Icon="Resources/window icon.png"
         Height="700" Width="525" ResizeMode="CanMinimize"
         UseLayoutRounding="True">
@@ -153,33 +153,29 @@ Use if the platform is too sensitive.</clr:String>
                         <Grid Margin="0,0,0,0" Width="500" HorizontalAlignment="Center" VerticalAlignment="Center">
                             <controls:PlatformSensorDisplay
                                 x:Name="PlatformSensorDisplay"
-                                Margin="-370,0,0,0"
+                                Margin="-470,0,0,0"
                             />
 
-                            <Label Margin="-300,0,0,0" x:Name="LowerValue" Content="0" Width="30" HorizontalContentAlignment="Right"
+                            <Label Margin="-400,-5,0,0" x:Name="LowerValue" Content="250" Width="30" HorizontalContentAlignment="Right"
                                    VerticalAlignment="Top"
                                    Visibility="{Binding Path=SliderActive, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource BooleanToVisibilityConverter}}"
                             />
-                            <Image x:Name="ThresholdWarning"
-                                   Source="Resources/threshold_warning.png" Width="9" Height="28"
-                                   Margin="-240,0,0,0"
-                                   Visibility="Visible"
-                            />
                             <controls:DoubleSlider x:Name="Slider"
-                                Margin="50,5,0,0"
+                                Margin="45,0,0,0"
                                 MinimumDistance="10"
                                 LowerValue="20" UpperValue="35"
                                 VerticalAlignment="Top"
-                                Width="240"
+                                Width="370"
                                 Focusable="False"
                                 Style="{DynamicResource DoubleSlider}"
                                 IsEnabled="{Binding Path=SliderActive, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
                             />
-                            <Label Margin="360,0,0,0" x:Name="UpperValue" Content="0" Width="40" HorizontalContentAlignment="Center"
+                            <Label Margin="460,-5,0,0" x:Name="UpperValue" Content="250" Width="40" HorizontalContentAlignment="Center"
                                 VerticalAlignment="Top"
                                 Visibility="{Binding Path=SliderActive, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource BooleanToVisibilityConverter}}"
                             />
-
+                            <controls:LevelBar x:Name="SensorBar" Margin="40,18,5,0" Style="{DynamicResource HorizontalLB}"/>
+                            
                             <!-- This is only shown for inner-sensors and outer-sensors.  It's always hidden and
                                  checked for other sliders. -->
                             <controls:ThresholdEnabledButton
@@ -187,14 +183,14 @@ Use if the platform is too sensitive.</clr:String>
                                 controls:Type="{Binding Path=Type, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
                                 VerticalAlignment="Center"
                                 HorizontalAlignment="Center"
-                                Margin="-450,0,0,0"
+                                Margin="-400,15,0,0"
                                 IsChecked="{Binding Path=ThresholdEnabled, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
                             />
 
                             <Button 
                                 x:Name="EditCustomSensorsButton"
                                 Visibility="Hidden"
-                                Content="Edit" Width="35" Height="30" Margin="-450 0 0 0" Padding="0 0" />
+                                Content="Edit" Width="30" Height="15" Margin="-390 15 0 0" Padding="0 0" FontSize="8" />
                         </Grid>
                     </ControlTemplate>
                 </Setter.Value>
@@ -217,49 +213,6 @@ Use if the platform is too sensitive.</clr:String>
                 </Trigger>
                 -->
             </Style.Triggers>
-        </Style>
-
-        <Style TargetType="{x:Type controls:PresetButton}">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type controls:PresetButton}">
-                        <Button x:Name="PART_Button" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
-                            <StackPanel Orientation="Horizontal">
-                                <Label x:Name="Checkbox" Padding="0" VerticalAlignment="Center">✔</Label>
-                                <Label Content="{TemplateBinding Label}"></Label>
-                            </StackPanel>
-                        </Button>
-
-                        <ControlTemplate.Triggers>
-                            <!-- Show the checkmark if the configuration matches this preset. -->
-                            <Trigger Property="Selected" Value="False">
-                                <Setter Property="Visibility" TargetName="Checkbox" Value="Collapsed" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style TargetType="{x:Type controls:PresetWidget}">
-            <Setter Property="Focusable" Value="false" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type controls:PresetWidget}">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <controls:PresetButton
-                                Width="70"
-                                Padding="5,2" Margin="5"
-                                Label="{TemplateBinding Label}"
-                                Type="{TemplateBinding Type}"
-                            />
-
-                            <TextBlock Width="350" VerticalAlignment="Center"
-                                   TextAlignment="Center" xml:space="preserve" Text="{TemplateBinding Description}" />
-                        </StackPanel>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
 
         <!-- Change this to any pure hue i.e. no more than 2 rgb components set and at least 1 set to FF -->
@@ -485,7 +438,55 @@ Use if the platform is too sensitive.</clr:String>
             </Setter>
         </Style>
 
-        <Style TargetType="{x:Type controls:LevelBar}">
+        <Style x:Key="HorizontalLB" TargetType="{x:Type controls:LevelBar}">
+            <Setter Property="Width" Value="390" />
+            <Setter Property="Height" Value="8" />
+            <Setter Property="Focusable" Value="false"/>
+
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type controls:LevelBar}">
+                        <Grid>
+                            <!-- Black backing: -->
+                            <Rectangle
+                                x:Name="Back"
+                                Width="390" Height="8" Fill="#FF000000"
+                                   HorizontalAlignment="Center"
+                                   Stroke="#000000" StrokeThickness="1" 
+                                Margin="0,0,0,0"
+                            />
+
+                            <!-- Filled portion: -->
+                            <Rectangle
+                                x:Name="Fill"
+                                Margin="1,0,1,0"
+                                Width="390" Height="6" Fill="#FFFFFF00"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                            />
+
+                            <Rectangle
+                                x:Name="Lower"
+                                Margin="60,0,1,0"
+                                Width="1" Height="10" Fill="Blue"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                            />
+                            
+                            <Rectangle
+                                x:Name="Higher"
+                                Margin="65,0,1,0"
+                                Width="1" Height="10" Fill="#FF00AAFF"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                            />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="VerticalLB" TargetType="{x:Type controls:LevelBar}">
             <Setter Property="Width" Value="35" />
             <Setter Property="Height" Value="200" />
             <Setter Property="Focusable" Value="false"/>
@@ -510,12 +511,27 @@ Use if the platform is too sensitive.</clr:String>
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Bottom"
                             />
+
+                            <Rectangle
+                                x:Name="Lower"
+                                Margin="0,0,0,0"
+                                Width="35" Height="1" Fill="#FF0000FF"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Bottom"
+                            />
+
+                            <Rectangle
+                                x:Name="Higher"
+                                Margin="0,0,0,0"
+                                Width="35" Height="1" Fill="#FF00AAFF"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Bottom"
+                            />
                         </Grid>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
-
 
         <Style TargetType="{x:Type controls:DiagnosticsControl}">
             <Setter Property="Focusable" Value="false"/>
@@ -577,22 +593,22 @@ Use if the platform is too sensitive.</clr:String>
 
                                     <StackPanel DockPanel.Dock="Left" Orientation="Vertical">
                                         <Image Source="Resources/sensor_left.png" Width="24" Height="24" Margin="0,0,6,0" />
-                                        <controls:LevelBar x:Name="SensorBar1" Margin="0,2,5,0" />
+                                        <controls:LevelBar x:Name="SensorBar1" Margin="0,2,5,0" Style="{DynamicResource VerticalLB}" />
                                         <Label x:Name="SensorBarLevel1" HorizontalAlignment="Center" Content="xxx"/>
                                     </StackPanel>
                                     <StackPanel DockPanel.Dock="Left" Orientation="Vertical">
                                         <Image Source="Resources/sensor_up.png" Width="24" Height="24" Margin="0,0,6,0" />
-                                        <controls:LevelBar x:Name="SensorBar3" Margin="0,2,5,0"/>
+                                        <controls:LevelBar x:Name="SensorBar3" Margin="0,2,5,0" Style="{DynamicResource VerticalLB}"/>
                                         <Label x:Name="SensorBarLevel3" HorizontalAlignment="Center" Content="xxx"/>
                                     </StackPanel>
                                     <StackPanel DockPanel.Dock="Left" Orientation="Vertical">
                                         <Image Source="Resources/sensor_down.png" Width="24" Height="24" Margin="0,0,6,0" />
-                                        <controls:LevelBar x:Name="SensorBar4" Margin="0,2,5,0"/>
+                                        <controls:LevelBar x:Name="SensorBar4" Margin="0,2,5,0" Style="{DynamicResource VerticalLB}"/>
                                         <Label x:Name="SensorBarLevel4" HorizontalAlignment="Center" Content="xxx"/>
                                     </StackPanel>
                                     <StackPanel DockPanel.Dock="Left" Orientation="Vertical">
                                         <Image Source="Resources/sensor_right.png" Width="24" Height="24" Margin="0,0,6,0" />
-                                        <controls:LevelBar x:Name="SensorBar2" Margin="0,2,0,0"/>
+                                        <controls:LevelBar x:Name="SensorBar2" Margin="0,2,0,0" Style="{DynamicResource VerticalLB}"/>
                                         <Label x:Name="SensorBarLevel2" HorizontalAlignment="Center" Content="xxx"/>
                                     </StackPanel>
                                 </DockPanel>
@@ -825,32 +841,168 @@ Use if the platform is too sensitive.</clr:String>
             <Label Content="Searching for controller..."
                    HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="33.333"/>
             <Label x:Name="Version1" Content="Version"
+                   HorizontalAlignment="Center" VerticalAlignment="Bottom" FontSize="15" Margin="0 0 0 30" />
+            <Label x:Name="ToolRev1" Content="Tool Revision v1"
                    HorizontalAlignment="Center" VerticalAlignment="Bottom" FontSize="15" Margin="0 0 0 10" />
         </Grid>
 
         <TabControl x:Name="Main" Margin="0,0,0,0" Visibility='Visible' HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
                     SelectionChanged="MainTab_Selected">
-            <TabItem Header="Settings">
+            <TabItem x:Name="MainTab" Header="Panels">
+                <StackPanel Background="#FFE5E5E5">
+                    <TextBlock HorizontalAlignment="Center" Margin="0,15,0,10" VerticalAlignment="Top"
+                                    TextAlignment="Center"
+                                    xml:space="preserve" FontSize="16">Active panels</TextBlock>
+                    <TextBlock xml:space="preserve" HorizontalAlignment="Center" Margin="0,0,0,0" TextAlignment="Center">Select which directions have sensors, and deselect panels that aren't in use.
+                        
+Input will be disabled from deselected panels.</TextBlock>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <controls:PanelSelector Focusable="false" />
+                    </StackPanel>
+
+                    <Separator Margin="0,10,0,10" />
+
+                    <TextBlock HorizontalAlignment="Center"
+                        xml:space="preserve" FontSize="16">Import/export settings</TextBlock>
+                    <TextBlock xml:space="preserve" HorizontalAlignment="Center" Margin="0,5,0,0" TextAlignment="Center"
+                                >Export current settings to a file.</TextBlock>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Button Content="Export" Width="50" Padding="5,2" Margin="5,10" Click="ExportSettings" />
+                        <Button Content="Import" Width="50" Padding="5,2" Margin="5,10" Click="ImportSettings" />
+                    </StackPanel>
+
+                    <Separator Margin="0,10,0,10" />
+                    <TextBlock HorizontalAlignment="Center"
+                                    xml:space="preserve" FontSize="16">Reset all settings</TextBlock>
+                    <Button Content="Factory reset" Width="140" Margin="0 10 0 0" Padding="0 4" Click="FactoryReset_Click"/>
+
+                    <Separator Margin="0,10,0,10" />
+                    <!-- This version label is tweaked so it's in the same place as the one on the
+                         connecting screen.  If we use the same margin, the tab container's border
+                         shifts it by a couple pixels, which makes it fidget around when we connect
+                         and disconnect. -->
+                    <Label x:Name="Version2" Content="Version"
+                        HorizontalAlignment="Center" VerticalAlignment="Bottom" FontSize="15" Margin="1,0,0,7" Grid.Column="1" />
+                    <Label x:Name="ToolRev2" Content="Tool Revision v1"
+                        HorizontalAlignment="Center" VerticalAlignment="Bottom" FontSize="15" Margin="1,0,0,7" Grid.Column="1" />
+                </StackPanel>
+            </TabItem>
+
+            <TabItem x:Name="SensitivityTab" Header="Sensitivity">
                 <Grid Background="#FFE5E5E5" RenderTransformOrigin="0.5,0.5">
-                    <StackPanel Margin="0,0,0,0" VerticalAlignment="Top" Grid.ColumnSpan="3">
-                        <TextBlock HorizontalAlignment="Center" Margin="0,15,0,10" VerticalAlignment="Top"
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="140*"/>
+                        <ColumnDefinition Width="63*"/>
+                        <ColumnDefinition Width="310*"/>
+                    </Grid.ColumnDefinitions>
+                    <DockPanel Margin="0,0,0,0" VerticalAlignment="Stretch" Grid.ColumnSpan="3">
+
+                        <TextBlock DockPanel.Dock="Top" HorizontalAlignment="Center" Margin="0,15,0,10" VerticalAlignment="Top"
                                    TextAlignment="Center"
-                                   xml:space="preserve" FontSize="16">Panel sensitivity</TextBlock>
+                                   xml:space="preserve" FontSize="16">Sensitivity</TextBlock>
+                        <TextBlock DockPanel.Dock="Top" HorizontalAlignment="Center" Margin="0,0,0,10" VerticalAlignment="Top"
+                                   xml:space="preserve"
+                                   TextAlignment="Center"
+>Set the force required to trigger each arrow.</TextBlock>
+                        <ScrollViewer
+                            Height="350"
+                            HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto"
+                            DockPanel.Dock="Top"
+                            >
+                            <DockPanel Margin="0,0,0,0" VerticalAlignment="Top" x:Name="ThresholdSliderContainer">
+                                <!-- CreateThresholdSliders adds ThresholdSliders here.  The slider below is only
+                                     for the UI preview, and is removed on refresh. -->
+                                <controls:ThresholdSlider DockPanel.Dock="Top" controls:ThresholdSlider.Type="up-left" Margin="0,8,0,0" />
+                            </DockPanel>
+                        </ScrollViewer>
 
-                        <controls:PresetWidget Type="high" Label="High"
-                            Description="{StaticResource HighPresetDescription}"
-                            Margin="0,5,0,10"
-                        />
-                        <controls:PresetWidget controls:PresetWidget.Type="normal" Label="Medium"
-                            Description="{StaticResource NormalPresetDescription}"
-                            Margin="0,5,0,10"
-                        />
-                        <controls:PresetWidget controls:PresetWidget.Type="low" Label="Low"
-                            Description="{StaticResource LowPresetDescription}"
-                            Margin="0,5,0,10"
-                        />
+                        <controls:EnableCenterTopSensorCheckbox VerticalAlignment="Center"
+                            x:Name="EnableCenterTopSensorCheckbox"
+                            DockPanel.Dock="Bottom" Content="Enable top sensor on center panel"
+                            HorizontalAlignment="Center"
+                            Margin="0 10 0 10"
+                            IsChecked="{Binding Path=EnableSensor, Mode=TwoWay, RelativeSource={RelativeSource Self}}"
+                    />
 
-                        <Separator Margin="0,10,0,4" />
+                        <DockPanel DockPanel.Dock="Bottom"
+                                    VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Margin="0,0,5,0"/>
+                    </DockPanel>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Advanced">
+                <StackPanel Background="#FFE5E5E5">
+                    <TextBlock HorizontalAlignment="Center" Margin="0,15,0,10" VerticalAlignment="Top"
+                                    TextAlignment="Center"
+                                    xml:space="preserve" FontSize="16">Advanced values</TextBlock>
+                    <TextBlock xml:space="preserve" HorizontalAlignment="Center" Margin="0,0,0,0" TextAlignment="Center" Foreground="#FF0000" FontSize="15">WARNING : These value was not designed to be changed.
+Modify them if you know EXACTLY what you are doing.
+For turing on/off Auto Calibration, just click on the button below</TextBlock>
+                    <Button x:Name="AutoCalibButton" Content="Disable auto calibration" Width="140" Margin="0 10 0 0" Padding="0 4" Click="AutoCalibButton_Click"/>
+                    <TextBlock xml:space="preserve" HorizontalAlignment="Center" Margin="0,0,0,0" TextAlignment="Center" Foreground="#FF7700" FontSize="10">(You may need to perform a "Recalibrate" in Diagnostic tabs to apply changes)</TextBlock>
+                    <Separator Margin="0,10,0,10" />
+                    
+                    <StackPanel HorizontalAlignment="Left" Margin="20,0,20,0" Orientation="Vertical" Width="470">
+                        <TextBlock xml:space="preserve" TextAlignment="Left">Debounce Nodelay Milliseconds [0-65535] (default : 0)</TextBlock>
+                        <TextBox x:Name="DebounceNodelayBox" xml:space="preserve" Width="50" Margin="0,-15,5,0" HorizontalAlignment="Right" TextAlignment="Left">0</TextBox>
+                    </StackPanel>
+                    <StackPanel HorizontalAlignment="Left" Margin="20,0,20,0" Orientation="Vertical" Width="470">
+                        <TextBlock xml:space="preserve" TextAlignment="Left">Debounce Delay Milliseconds [0-65535] (default : 0)</TextBlock>
+                        <TextBox x:Name="DebounceDelayBox" xml:space="preserve" Width="50" Margin="0,-15,5,0" HorizontalAlignment="Right" TextAlignment="Left">0</TextBox>
+                    </StackPanel>
+                    <StackPanel HorizontalAlignment="Left" Margin="20,0,20,0" Orientation="Vertical" Width="470">
+                        <TextBlock xml:space="preserve" TextAlignment="Left">Panel Debounce Microseconds [0-65535] (default : 4000)</TextBlock>
+                        <TextBox x:Name="PanelDebounceBox" xml:space="preserve" Width="50" Margin="0,-15,5,0" HorizontalAlignment="Right" TextAlignment="Left">4000</TextBox>
+                    </StackPanel>
+                    <StackPanel HorizontalAlignment="Left" Margin="20,0,20,0" Orientation="Vertical" Width="470">
+                        <TextBlock xml:space="preserve" TextAlignment="Left">Bad Sensor Minimum Delay Seconds [0-255] (default : 15)</TextBlock>
+                        <TextBox x:Name="BadSensorBox" xml:space="preserve" Width="50" Margin="0,-15,5,0" HorizontalAlignment="Right" TextAlignment="Left">15</TextBox>
+                    </StackPanel>
+                    <StackPanel HorizontalAlignment="Left" Margin="20,0,20,0" Orientation="Vertical" Width="470">
+                        <TextBlock xml:space="preserve" TextAlignment="Left">AutoCalib Max Deviation [0-255] (default : 100)</TextBlock>
+                        <TextBox x:Name="AutoCalibMaxDeviationBox" xml:space="preserve" Width="50" Margin="0,-15,5,0" HorizontalAlignment="Right" TextAlignment="Left">100</TextBox>
+                    </StackPanel>
+                    <StackPanel HorizontalAlignment="Left" Margin="20,0,20,0" Orientation="Vertical" Width="470">
+                        <TextBlock xml:space="preserve" TextAlignment="Left">AutoCalib Averages Per Updates [0-65535] (default : 60)</TextBlock>
+                        <TextBox x:Name="AutoCalibAverageBox" xml:space="preserve" Width="50" Margin="0,-15,5,0" HorizontalAlignment="Right" TextAlignment="Left">60</TextBox>
+                    </StackPanel>
+                    <StackPanel HorizontalAlignment="Left" Margin="20,0,20,0" Orientation="Vertical" Width="470">
+                        <TextBlock xml:space="preserve" TextAlignment="Left">AutoCalib Samples Per Average [0-65535] (default : 500)</TextBlock>
+                        <TextBox x:Name="AutoCalibSamplesBox" xml:space="preserve" Width="50" Margin="0,-15,5,0" HorizontalAlignment="Right" TextAlignment="Left">500</TextBox>
+                    </StackPanel>
+                    <StackPanel HorizontalAlignment="Left" Margin="20,5,20,0" Orientation="Vertical" Width="470">
+                        <TextBlock xml:space="preserve" TextAlignment="Left" Foreground="#AA2200">Warning : Can lead to jumpers error, try only multiples of 8 values :</TextBlock>
+                    </StackPanel>
+                    <StackPanel HorizontalAlignment="Left" Margin="20,0,20,0" Orientation="Vertical" Width="470">
+                        <TextBlock xml:space="preserve" TextAlignment="Left">AutoCalib Max Tare [0-65535] (default : 65535)</TextBlock>
+                        <TextBox x:Name="AutoCalibMaxTare" xml:space="preserve" Width="50" Margin="0,-15,5,0" HorizontalAlignment="Right" TextAlignment="Left">65535</TextBox>
+                    </StackPanel>
+                    <Separator Margin="0,10,0,10" />
+                    <Button Content="Update" Width="140" Margin="0 10 0 0" Padding="0 4" Click="UpdateAdvancedValues_Click"/>
+                    <TextBlock x:Name="AdvancedValueError" xml:space="preserve" TextAlignment="Center" Foreground="#AA0000" FontSize="15" Margin="0,10,0,0"></TextBlock>
+                </StackPanel>
+            </TabItem>
+
+            <TabItem x:Name="DiagnosticTab" Header="Diagnostics">
+                <StackPanel Background="#FFE5E5E5">
+                    <controls:DiagnosticsControl x:Name="Diagnostics" />
+                </StackPanel>
+            </TabItem>
+
+            <TabItem x:Name="ColorTab" Header="Colors">
+                <Grid Background="#FFE5E5E5" RenderTransformOrigin="0.5,0.5">
+                    <StackPanel Margin="0,20,0,0" VerticalAlignment="Top" Grid.ColumnSpan="3">
+
+                        <controls:LightAllPanelsCheckbox VerticalAlignment="Center"
+                            x:Name="LightAllPanelsCheckbox"
+                            DockPanel.Dock="Right" Content="Light all panels"
+                            HorizontalAlignment="Center"
+                            IsChecked="{Binding Path=LightAllPanels, Mode=TwoWay, RelativeSource={RelativeSource Self}}"
+                    />
+
+                        <TextBlock xml:space="preserve" HorizontalAlignment="Center" Margin="0,0,0,0" TextAlignment="Center">Show light animations on all panels
+instead of only panels with sensors.</TextBlock>
 
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
                                     Margin="0,0,0,10">
@@ -924,128 +1076,7 @@ Use if the platform is too sensitive.</clr:String>
                             <Button x:Name="SetAllPanelsToCurrentColor" Content="Set all panels to this color" HorizontalAlignment="Center" Padding="6,2" Margin="0,6,0,0" />
                         </StackPanel>
                     </StackPanel>
-
-                    <!-- This version label is tweaked so it's in the same place as the one on the
-                         connecting screen.  If we use the same margin, the tab container's border
-                         shifts it by a couple pixels, which makes it fidget around when we connect
-                         and disconnect. -->
-                    <Label x:Name="Version2" Content="Version"
-                        HorizontalAlignment="Center" VerticalAlignment="Bottom" FontSize="15" Margin="1,0,0,7" Grid.Column="1" />
                 </Grid>
-            </TabItem>
-
-            <TabItem x:Name="SensitivityTab" Header="Sensitivity">
-                <Grid Background="#FFE5E5E5" RenderTransformOrigin="0.5,0.5">
-                    <DockPanel Margin="0,0,0,0" VerticalAlignment="Stretch">
-                        <TextBlock DockPanel.Dock="Top" HorizontalAlignment="Center" Margin="0,15,0,10" VerticalAlignment="Top"
-                                   TextAlignment="Center"
-                                   xml:space="preserve" FontSize="16">Custom sensitivity</TextBlock>
-                        <TextBlock DockPanel.Dock="Top" HorizontalAlignment="Center" Margin="0,0,0,10" VerticalAlignment="Top"
-                                   xml:space="preserve"
-                                   TextAlignment="Center"
->Set the force required to trigger each arrow.</TextBlock>
-                        <ScrollViewer
-                            Height="350"
-                            HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto"
-                            DockPanel.Dock="Top"
-                            >
-                            <DockPanel Margin="0,0,0,0" VerticalAlignment="Top" x:Name="ThresholdSliderContainer">
-                                <!-- CreateThresholdSliders adds ThresholdSliders here.  The slider below is only
-                                     for the UI preview, and is removed on refresh. -->
-                                <controls:ThresholdSlider DockPanel.Dock="Top" controls:ThresholdSlider.Type="up-left" Margin="0,8,0,0" />
-                            </DockPanel>
-                        </ScrollViewer>
-                        <TextBlock DockPanel.Dock="Top" HorizontalAlignment="Center" Margin="0,25,0,0" VerticalAlignment="Top"
-                                   xml:space="preserve"
-                                   TextAlignment="Center"
->Each slider sets the amount of weight necessary for
-a panel to activate and deactivate.
-                            
-A panel will activate when it reaches the right side of the
-slider, and deactivate when it reaches the left side of the slider.</TextBlock>
-                        <TextBlock x:Name="ThresholdWarningText" DockPanel.Dock="Top" HorizontalAlignment="Center" Margin="0,15,0,0"
-                                   xml:space="preserve"
-                                   TextAlignment="Center"
-                                   Foreground="#F00"
->Low thresholds above 140 are recommended.  Higher thresholds allow the
-panel to detect releases more quickly.
-                        </TextBlock>
-
-
-                        <DockPanel DockPanel.Dock="Bottom"
-                                    VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Margin="0,0,5,0">
-                            <Label Content="Presets:" VerticalAlignment="Center" />
-                            <controls:PresetButton Width="70" Padding="5,2" Margin="5" Label="Low" Type="low" />
-                            <controls:PresetButton Width="70" Padding="5,2" Margin="5" Label="Normal" Type="normal" />
-                            <controls:PresetButton Width="70" Padding="5,2" Margin="5" Label="High" Type="high" />
-                            <controls:AdvancedThresholdViewCheckbox
-                                x:Name="AdvancedModeEnabledCheckbox"
-                                DockPanel.Dock="Right" Content="Advanced view"
-                                VerticalAlignment="Center" HorizontalAlignment="Right"
-                                IsChecked="{Binding Path=AdvancedModeEnabled, Mode=TwoWay, RelativeSource={RelativeSource Self}}"
-                                Checked="AdvancedModeEnabledCheckbox_Changed"
-                                Unchecked="AdvancedModeEnabledCheckbox_Changed"
-                            />
-                        </DockPanel>
-                    </DockPanel>
-                </Grid>
-            </TabItem>
-
-            <TabItem Header="Advanced">
-                <StackPanel Background="#FFE5E5E5">
-                    <TextBlock HorizontalAlignment="Center" Margin="0,15,0,10" VerticalAlignment="Top"
-                                    TextAlignment="Center"
-                                    xml:space="preserve" FontSize="16">Active panels</TextBlock>
-                    <TextBlock xml:space="preserve" HorizontalAlignment="Center" Margin="0,0,0,0" TextAlignment="Center">Select which directions have sensors, and deselect panels that aren't in use.
-                        
-Input will be disabled from deselected panels.</TextBlock>
-
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <controls:PanelSelector Focusable="false" />
-                    </StackPanel>
-                    <Separator Margin="0,10,0,10" />
-                    <TextBlock HorizontalAlignment="Center" Margin="0,0,0,10" VerticalAlignment="Top" TextAlignment="Center"
-                            xml:space="preserve" FontSize="16">Options</TextBlock>
-
-                    <controls:LightAllPanelsCheckbox VerticalAlignment="Center"
-                            x:Name="LightAllPanelsCheckbox"
-                            DockPanel.Dock="Right" Content="Light all panels"
-                            HorizontalAlignment="Center"
-                            IsChecked="{Binding Path=LightAllPanels, Mode=TwoWay, RelativeSource={RelativeSource Self}}"
-                    />
-
-                    <TextBlock xml:space="preserve" HorizontalAlignment="Center" Margin="0,0,0,0" TextAlignment="Center">Show light animations on all panels
-instead of only panels with sensors.</TextBlock>
-
-                    <controls:EnableCenterTopSensorCheckbox VerticalAlignment="Center"
-                            x:Name="EnableCenterTopSensorCheckbox"
-                            DockPanel.Dock="Right" Content="Enable top sensor on center panel"
-                            HorizontalAlignment="Center"
-                            Margin="0 10 0 0"
-                            IsChecked="{Binding Path=EnableSensor, Mode=TwoWay, RelativeSource={RelativeSource Self}}"
-                    />
-
-                    <Separator Margin="0,10,0,10" />
-
-                    <TextBlock HorizontalAlignment="Center"
-                        xml:space="preserve" FontSize="16">Import/export settings</TextBlock>
-                    <TextBlock xml:space="preserve" HorizontalAlignment="Center" Margin="0,5,0,0" TextAlignment="Center"
-                                >Export current settings to a file.</TextBlock>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Button Content="Export" Width="50" Padding="5,2" Margin="5,10" Click="ExportSettings" />
-                        <Button Content="Import" Width="50" Padding="5,2" Margin="5,10" Click="ImportSettings" />
-                    </StackPanel>
-
-                    <Separator Margin="0,10,0,10" />
-                    <TextBlock HorizontalAlignment="Center"
-                                    xml:space="preserve" FontSize="16">Reset all settings</TextBlock>
-                    <Button Content="Factory reset" Width="140" Margin="0 10 0 0" Padding="0 4" Click="FactoryReset_Click"/>
-                </StackPanel>
-            </TabItem>
-            <TabItem Header="Diagnostics">
-                <StackPanel Background="#FFE5E5E5">
-                    <controls:DiagnosticsControl x:Name="Diagnostics" />
-                </StackPanel>
             </TabItem>
         </TabControl>
 

@@ -10,6 +10,9 @@ namespace smx_config
 {
     public partial class MainWindow: Window
     {
+        //To be changed on each release
+        private const int TOOL_REVISION = 1;
+        
         OnConfigChange onConfigChange;
         ShowAutoLightsColor showAutoLightsColor = new ShowAutoLightsColor();
 
@@ -17,7 +20,7 @@ namespace smx_config
         {
             InitializeComponent();
 
-            onConfigChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args)
+             onConfigChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args)
             {
                 LoadUIFromConfig(args);
             });
@@ -37,6 +40,9 @@ namespace smx_config
                 bool shouldConfirmExit = false;
                 for(int pad = 0; pad < 2; ++pad)
                 {
+                    //Ensure that the tool set the sensor test to off before closing
+                    SMX.SMX.SetSensorTestMode(pad, SMX.SMX.SensorTestMode.Off);
+
                     SMX.SMXConfig config;
                     if(!SMX.SMX.GetConfig(pad, out config))
                         continue;
@@ -45,7 +51,7 @@ namespace smx_config
                     // The user can upload GIF animations and doesn't need to leave us running
                     // for them to work.  You can still use this tool to drive animations, but
                     // don't confirm exiting.
-                    if(config.masterVersion >= 4)
+                    if(config.IsNewGen())
                         continue;
 
                     // If AutoLightingUsePressedAnimations isn't set, the panel is using step
@@ -67,11 +73,12 @@ namespace smx_config
                 if(result == MessageBoxResult.No)
                     e.Cancel = true;
             };
+
+            Main.SelectedItem = MainTab;
         }
 
         bool IsThresholdSliderShown(string type)
         {
-            bool AdvancedModeEnabled = Properties.Settings.Default.AdvancedMode;
             SMX.SMXConfig config = ActivePad.GetFirstActivePadConfig();
             bool[] enabledPanels = config.GetEnabledPanels();
 
@@ -81,10 +88,10 @@ namespace smx_config
             //
             // Don't do this for custom, inner-sensors or outer-sensors.  Those are always shown in
             // advanced mode.
-            List<ThresholdSettings.PanelAndSensor> panelAndSensors = ThresholdSettings.GetControlledSensorsForSliderType(type, AdvancedModeEnabled, false);
+            List<ThresholdSettings.PanelAndSensor> panelAndSensors = ThresholdSettings.GetControlledSensorsForSliderType(type, config.HasAllPanels(), false);
             if(type == "custom-sensors" || type == "inner-sensors" || type == "outer-sensors")
             {
-                if(!AdvancedModeEnabled || !config.fsr())
+                if(!config.HasAllPanels() || !config.isFSR())
                     return false;
             }
             else
@@ -152,6 +159,8 @@ namespace smx_config
 
             Version1.Content = "SMXConfig version " + SMX.SMX.Version();
             Version2.Content = "SMXConfig version " + SMX.SMX.Version();
+            ToolRev1.Content = "Tool Revision v" + TOOL_REVISION;
+            ToolRev2.Content = "Tool Revision v" + TOOL_REVISION;
 
             AutoLightsColor.StartedDragging += delegate () { showAutoLightsColor.Start(); };
             AutoLightsColor.StoppedDragging += delegate () { showAutoLightsColor.Stop(); };
@@ -252,9 +261,19 @@ namespace smx_config
             P2_Floor.Visibility =
                 args.firmwareVersion() >= 5 ? Visibility.Visible : Visibility.Collapsed;
 
+            DebounceNodelayBox.Text = firstConfig.debounceNodelayMilliseconds.ToString();
+            DebounceDelayBox.Text = firstConfig.debounceDelayMs.ToString();
+            PanelDebounceBox.Text = firstConfig.panelDebounceMicroseconds.ToString();
+            BadSensorBox.Text = firstConfig.badSensorMinimumDelaySeconds.ToString();
+            AutoCalibMaxDeviationBox.Text = firstConfig.autoCalibrationMaxDeviation.ToString();
+            AutoCalibAverageBox.Text = firstConfig.autoCalibrationAveragesPerUpdate.ToString();
+            AutoCalibSamplesBox.Text = firstConfig.autoCalibrationSamplesPerAverage.ToString();
+            AutoCalibMaxTare.Text = firstConfig.autoCalibrationMaxTare.ToString();
+            AutoCalibButton.Content = firstConfig.autoCalibrationMaxTare == 16 ? "Enable Auto Calibration" : "Disable Auto Calibration";
+
             // Show the color slider or GIF UI depending on which one is set in flags.
             // If both pads are turned on, just use the first one.
-            foreach(Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
+            foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
             {
                 SMX.SMXConfig config = activePad.Item2;
 
@@ -274,29 +293,12 @@ namespace smx_config
 
             RefreshConnectedPadList(args);
             RefreshUploadPadText(args);
-            RefreshSelectedColorPicker();
 
             // If a device has connected or disconnected, refresh the displayed threshold
             // sliders.  Don't do this otherwise, or we'll do this when the sliders are
             // dragged.
             if(args.ConnectionsChanged)
                 CreateThresholdSliders();
-
-            // Show the threshold warning explanation if any panels are showing the threshold warning icon.
-            bool ShowThresholdWarningText = false;
-            foreach(Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
-            {
-                SMX.SMXConfig config = activePad.Item2;
-                for(int panelIdx = 0; panelIdx < 9; ++panelIdx)
-                {
-                    for(int sensor = 0; sensor < 4; ++sensor)
-                    {
-                        if(config.ShowThresholdWarning(panelIdx, sensor))
-                            ShowThresholdWarningText = true;
-                    }
-                }
-            }
-            ThresholdWarningText.Visibility = ShowThresholdWarningText ? Visibility.Visible : Visibility.Hidden;
 
             // If a second controller has connected and we're on Both, see if we need to prompt
             // to sync configs.  We only actually need to do this if a controller just connected.
@@ -358,7 +360,7 @@ namespace smx_config
             {
                 SMX.SMXConfig config = activePad.Item2;
 
-                bool uploadsSupported = config.masterVersion >= 4;
+                bool uploadsSupported = config.IsNewGen();
                 LeaveRunning.Visibility = uploadsSupported ? Visibility.Collapsed : Visibility.Visible;
                 break;
             }
@@ -477,6 +479,76 @@ namespace smx_config
             }
         }
 
+        private void UpdateAdvancedValues_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
+            {
+                int pad = activePad.Item1;
+                SMX.SMXConfig config = activePad.Item2;
+
+                string error = null;
+                config.debounceNodelayMilliseconds = TryParseShortTextData(DebounceNodelayBox, "Debounce Nodelay", ref error);
+                config.debounceDelayMs = TryParseShortTextData(DebounceDelayBox, "Debounce Delay", ref error);
+                config.panelDebounceMicroseconds = TryParseShortTextData(PanelDebounceBox, "Panel Debounce", ref error);
+                config.badSensorMinimumDelaySeconds = TryParseByteTextData(BadSensorBox, "Bad sensor", ref error);
+                config.autoCalibrationMaxDeviation = TryParseByteTextData(AutoCalibMaxDeviationBox, "AutoCalib Max Deviation", ref error);
+                config.autoCalibrationAveragesPerUpdate = TryParseShortTextData(AutoCalibAverageBox, "AutoCalib Average per Update", ref error);
+                config.autoCalibrationSamplesPerAverage = TryParseShortTextData(AutoCalibSamplesBox, "AutoCalib Samples per Average", ref error);
+                config.autoCalibrationMaxTare = TryParseShortTextData(AutoCalibMaxTare, "AutoCalib Max Tare", ref error);
+
+                if (!string.IsNullOrEmpty(error))
+                {
+                    AdvancedValueError.Text = error;
+                    AdvancedValueError.Foreground = (SolidColorBrush)(new BrushConverter().ConvertFrom("#AA0000"));
+                }
+                else
+                {
+                    SMX.SMX.SetConfig(pad, config);
+                    AdvancedValueError.Text = "Correctly updated at " + DateTime.Now.ToLongTimeString();
+                    AdvancedValueError.Foreground = (SolidColorBrush)(new BrushConverter().ConvertFrom("#00AA00"));
+                }
+            }
+            CurrentSMXDevice.singleton.FireConfigurationChanged(null);
+        }
+
+        private ushort TryParseShortTextData(TextBox box, string title, ref string error)
+        {
+            //An error already occured
+            if (!string.IsNullOrEmpty(error))
+                return default;
+
+            error = null;
+            if (ushort.TryParse(box.Text, out ushort result))
+                return result;
+            error = "Update failed : " + title + " has a wrong value";
+            return default;
+        }
+
+        private byte TryParseByteTextData(TextBox box, string title, ref string error)
+        {
+            //An error already occured
+            if (!string.IsNullOrEmpty(error))
+                return default;
+
+            error = null;
+            if (byte.TryParse(box.Text, out byte result))
+                return result;
+            error = "Update failed : " + title + " has a wrong value";
+            return default;
+        }
+
+        private void AutoCalibButton_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
+            {
+                int pad = activePad.Item1;
+                SMX.SMXConfig config = activePad.Item2;
+
+                config.autoCalibrationMaxTare = config.autoCalibrationMaxTare == 16 ? ushort.MaxValue : (ushort)16;
+                SMX.SMX.SetConfig(pad, config);
+            }
+            CurrentSMXDevice.singleton.FireConfigurationChanged(null);
+        }
 
         private void FactoryReset_Click(object sender, RoutedEventArgs e)
         {
@@ -593,7 +665,7 @@ namespace smx_config
                 if(!SMX.SMX.GetConfig(pad, out config))
                     continue;
 
-                if(config.masterVersion >= 4)
+                if(config.IsNewGen())
                     UploadLatestGIF();
 
                 break;
@@ -657,11 +729,24 @@ namespace smx_config
 
         private void MainTab_Selected(object sender, RoutedEventArgs e)
         {
-            if(Main.SelectedItem == SensitivityTab)
+            if (Main.SelectedItem == ColorTab)
+            {
+                RefreshSelectedColorPicker();
+            }
+
+            if (Main.SelectedItem == SensitivityTab)
             {
                 // Refresh the threshold sliders, in case the enabled panels were changed
                 // on the advanced tab.
                 CreateThresholdSliders();
+
+                for (int pad = 0; pad < 2; ++pad)
+                    SMX.SMX.SetSensorTestMode(pad, SMX.SMX.SensorTestMode.CalibratedValues, "MainWindow");
+            }
+            else if(Main.SelectedItem != DiagnosticTab)
+            {
+                for (int pad = 0; pad < 2; ++pad)
+                    SMX.SMX.SetSensorTestMode(pad, SMX.SMX.SensorTestMode.Off, "MainWindow");
             }
         }
     }

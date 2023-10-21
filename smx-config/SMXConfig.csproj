@@ -8,7 +8,7 @@
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>smx_config</RootNamespace>
-    <AssemblyName>SMXConfig</AssemblyName>
+    <AssemblyName>SMXConfigPro</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -75,7 +75,7 @@
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>window icon.ico</ApplicationIcon>
+    <ApplicationIcon>Resources\window icon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -100,20 +100,27 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="ConfigPresets.cs" />
-    <Compile Include="CurrentSMXDevice.cs" />
-    <Compile Include="DiagnosticsWidgets.cs" />
-    <Compile Include="DoubleSlider.cs" />
-    <Compile Include="Helpers.cs" />
+    <Compile Include="Source\Controllers\ColorPicker.cs" />
+    <Compile Include="Source\Controllers\FrameImage.cs" />
+    <Compile Include="Source\Controllers\Checkboxes.cs" />
+    <Compile Include="Source\Controllers\LevelBar.cs" />
+    <Compile Include="Source\Controllers\PanelSelector.cs" />
+    <Compile Include="Source\Controllers\PlatformSensorDisplay.cs" />
+    <Compile Include="Source\Controllers\SimpleComponents.cs" />
+    <Compile Include="Source\Controllers\ThresholdSlider.cs" />
+    <Compile Include="Source\Helpers\ConfigPresets.cs" />
+    <Compile Include="Source\Helpers\CurrentSMXDevice.cs" />
+    <Compile Include="Source\Controllers\DiagnosticsControl.cs" />
+    <Compile Include="Source\Controllers\DoubleSlider.cs" />
+    <Compile Include="Source\Helpers\Helpers.cs" />
     <Compile Include="SetCustomSensors.xaml.cs">
       <DependentUpon>SetCustomSensors.xaml</DependentUpon>
     </Compile>
     <Compile Include="ProgressWindow.xaml.cs">
       <DependentUpon>ProgressWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="SMXJSON.cs" />
-    <Compile Include="SMX.cs" />
-    <Compile Include="Widgets.cs" />
+    <Compile Include="Source\SMX API\SMXJSON.cs" />
+    <Compile Include="Source\SMX API\SMX.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
