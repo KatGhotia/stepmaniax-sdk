@@ -91,6 +91,12 @@ public:
     // sError will be set on a communications error.  The owner must close the device.
     void Update(wstring &sError);
 
+    // Internal:
+
+    // Return true if we are currently requesting sensor test data so we can avoid
+    // waiting for too long in the main thread and blocking timely sensor updates.
+    bool IsInSensorTestMode();
+
 private:
     shared_ptr<SMX::AutoCloseHandle> m_hEvent;
     SMX::Mutex &m_Lock;
@@ -126,6 +132,12 @@ private:
     void UpdateSensorTestMode();
     void HandleSensorTestDataResponse(const string &sReadBuffer);
     SensorTestMode m_WaitingForSensorTestModeResponse = SensorTestMode_Off;
+    // We want to pre-ask for an extra sensor test data update at all times to ensure every
+    // event loop on the firmware sends us sensor test data. This tracks how many times we have
+    // asked without a response so we aren't wasteful.
+    uint32_t m_SensorTestModeAsksSent = 0;
+    uint32_t m_sensorTestModeTimeLastAsked = 0;
+    uint32_t m_sensorTestModeTimeLastReceived = 0;
     SensorTestMode m_SensorTestMode = SensorTestMode_Off;
     bool m_HaveSensorTestModeData = false;
     SMXSensorTestModeData m_SensorTestData;

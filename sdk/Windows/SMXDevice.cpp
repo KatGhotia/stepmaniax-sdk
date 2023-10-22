@@ -12,6 +12,9 @@
 using namespace std;
 using namespace SMX;
 
+// Uncomment to print sensor test debug logs - very verbose!
+//#define DEBUG_SENSOR_TEST_DATA
+
 // Extract test data for panel iPanel.
 static void ReadDataForPanel(const vector<uint16_t> &data, int iPanel, void *pOut, int iOutSize)
 {
@@ -469,21 +472,30 @@ void SMX::SMXDevice::UpdateSensorTestMode()
     if(m_SensorTestMode == SensorTestMode_Off)
         return;
 
-    // Request sensor data from the master.  Don't send this if we have a request outstanding
-    // already.
     uint32_t now = GetTickCount();
-    if(m_WaitingForSensorTestModeResponse != SensorTestMode_Off)
+
+    // Request sensor data from the master.  Don't send this if we have enough requests outstanding
+    // already.
+    if(m_SensorTestModeAsksSent > 1 && m_WaitingForSensorTestModeResponse != SensorTestMode_Off)
     {
         // This request should be quick.  If we haven't received a response in a long
         // time, assume the request wasn't received.
-        if(now - m_SentSensorTestModeRequestAtTicks < 30)
+        // We can only receive a rsponse to our request at a maximum rate of once per ~16ms due to what is
+        // assumed to be a hard loop timer on the firmware, so don't set this lower than that or it will spam
+        // the SMX for no gain.
+        if(now - m_SentSensorTestModeRequestAtTicks < 200)
             return;
     }
 
+#ifdef DEBUG_SENSOR_TEST_DATA
+    Log(ssprintf("ask for sensor test data - asks outstanding=%d, time since last ask: %dms", m_SensorTestModeAsksSent, now - m_sensorTestModeTimeLastAsked));
+#endif
 
     // Send the request.
     m_WaitingForSensorTestModeResponse = m_SensorTestMode;
     m_SentSensorTestModeRequestAtTicks = now;
+    m_SensorTestModeAsksSent++;
+    m_sensorTestModeTimeLastAsked = now;
 
     SendCommandLocked(ssprintf("y%c\n", m_SensorTestMode));
 }
@@ -531,6 +543,12 @@ void SMX::SMXDevice::HandleSensorTestDataResponse(const string &sReadBuffer)
     }
 
     m_WaitingForSensorTestModeResponse = SensorTestMode_Off;
+    m_SensorTestModeAsksSent = max(m_SensorTestModeAsksSent - 1, 0);
+    uint32_t now = GetTickCount();
+#ifdef DEBUG_SENSOR_TEST_DATA
+    Log(ssprintf("receive test data - asks outstanding=%d, time since last receive: %dms", m_SensorTestModeAsksSent, now - m_sensorTestModeTimeLastReceived));
+#endif
+    m_sensorTestModeTimeLastReceived = now;
 
     // We match m_WaitingForSensorTestModeResponse, which is the sensor request we most
     // recently sent.  If we don't match g_SensorTestMode, then the sensor mode was changed
@@ -604,4 +622,8 @@ void SMX::SMXDevice::HandleSensorTestDataResponse(const string &sReadBuffer)
     }
 
     CallUpdateCallback(SMXUpdateCallback_Updated);
+}
+
+bool SMX::SMXDevice::IsInSensorTestMode() {
+    return m_SensorTestMode != SensorTestMode_Off;
 }
