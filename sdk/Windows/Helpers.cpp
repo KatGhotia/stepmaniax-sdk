@@ -4,9 +4,20 @@
 using namespace std;
 using namespace SMX;
 
+// Uncomment to use Log() in Release build
+//#define NDEBUGLOGGING
+
 namespace {
     function<void(const string &log)> g_LogCallback = [](const string &log) {
+#ifdef _DEBUG
         printf("%6.3f: %s\n", GetMonotonicTime(), log.c_str());
+#else
+#ifdef NDEBUGLOGGING
+        // Use WriteFile rather than printf() because stdout doesn't get flushed automatically from DLLs built for release
+        std::string str = ssprintf("%6.3f: %s\n", GetMonotonicTime(), log.c_str());
+        WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), str.c_str(), str.length(), NULL, NULL);
+#endif
+#endif
     };
 };
 

@@ -144,10 +144,12 @@ void SMX::SMXManager::ThreadMain()
         AttemptConnections();
 
         // Update all connected devices.
+        bool anyDeviceInSensorTestMode = false;
         for(shared_ptr<SMXDevice> pDevice: m_pDevices)
         {
             wstring sError;
             pDevice->Update(sError);
+            anyDeviceInSensorTestMode = anyDeviceInSensorTestMode || pDevice->IsInSensorTestMode();
 
             if(!sError.empty())
             {
@@ -184,6 +186,13 @@ void SMX::SMXManager::ThreadMain()
             // repeatedly waking up slightly too early.
             iDelayMS = int(fSendIn * 1000) + 1;
             iDelayMS = max(0, iDelayMS);
+        }
+
+        // If we're in sensor test mode, the test data will come around once every firmware loop, which
+        // seems to be ~15-16ms. Wait that long to catch updates without too much waste.
+        if (anyDeviceInSensorTestMode) {
+            // Obviously if the lights need us sooner, use that value instead.
+            iDelayMS = min(16, iDelayMS);
         }
 
         // Wait until there's something to do for a connected device, or delay briefly if we're
