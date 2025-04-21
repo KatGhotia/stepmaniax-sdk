@@ -3,7 +3,7 @@
     <OutputType>WinExe</OutputType>
     <RootNamespace>smx_config</RootNamespace>
     <AssemblyName>SMXConfigPro</AssemblyName>
-    <TargetFramework>net472</TargetFramework>
+    <TargetFramework>net480</TargetFramework>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <PublishUrl>publish\</PublishUrl>
@@ -25,6 +25,7 @@
     <Product>smx-config</Product>
     <Copyright>© 2017</Copyright>
     <UseWPF>true</UseWPF>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugType>full</DebugType>
@@ -71,9 +72,11 @@
   <ItemGroup>
     <Resource Include="window icon.ico" />
   </ItemGroup>
+  <!--
   <ItemGroup>
     <ProjectReference Include="..\sdk\Windows\SMX.vcxproj" />
   </ItemGroup>
+  -->
   <ItemGroup>
     <Resource Include="Resources\pressed.gif" />
     <Resource Include="Resources\released.gif" />
