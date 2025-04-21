@@ -1,7 +1,6 @@
 using System;
 using System.Windows;
 using System.Runtime.InteropServices;
-using System.IO;
 using System.Threading;
 
 namespace smx_config
@@ -16,7 +15,7 @@ namespace smx_config
         [DllImport("kernel32.dll")]
         public static extern bool AllocConsole();
 
-        private System.Windows.Forms.NotifyIcon trayIcon;
+        private System.Windows.Forms.NotifyIcon trayIcon = new System.Windows.Forms.NotifyIcon();
         private MainWindow window;
 
         App()
@@ -32,7 +31,7 @@ namespace smx_config
             if (ForegroundExistingInstance())
             {
                 Shutdown();
-                return;
+        return;
             }
 
             // Only create a console to show SMX.dll logs and other console logs if built for debug
@@ -51,28 +50,29 @@ namespace smx_config
             // reason (eg. a renamed launch shortcut that we couldn't find to remove).  As
             // a safety so we don't launch when the user doesn't want us to, just exit in this
             // case.
-            if(Helpers.LaunchedOnStartup() && !LaunchOnStartup.Enable)
+            if (Helpers.LaunchedOnStartup() && !LaunchOnStartup.Enable)
             {
+                Console.Error.WriteLine("LaunchOnStartup disabled in App config.");
                 Shutdown();
-                return;
+        return;
             }
 
             LaunchOnStartup.Enable = true;
-            if(!SMX.SMX.DLLExists())
+            if (!SMX.SMX.DLLExists())
             {
-                MessageBox.Show("SMXConfig encountered an unexpected error.\n\nSMX.dll couldn't be found:\n\n" + Helpers.GetLastWin32ErrorString(), "SMXConfig");
+                MessageBox.Show("SMXConfig startup error.\n\nSMX.dll couldn't be found:\n\n" + Helpers.GetLastWin32ErrorString(), "SMXConfig");
                 Current.Shutdown();
-                return;
+        return;
             }
             
-            if(!SMX.SMX.DLLAvailable())
+            if (!SMX.SMX.DLLAvailable())
             {
-                MessageBox.Show("SMXConfig encountered an unexpected error.\n\nSMX.dll failed to load:\n\n" + Helpers.GetLastWin32ErrorString(), "SMXConfig");
+                MessageBox.Show("SMXConfig initialization error.\n\nSMX.dll failed to load:\n\n" + Helpers.GetLastWin32ErrorString(), "SMXConfig");
                 Current.Shutdown();
-                return;
+        return;
             }
 
-            if(Helpers.GetDebug())
+            if (Helpers.GetDebug())
                 SMX_Internal_OpenConsole();
 
             CurrentSMXDevice.singleton = new CurrentSMXDevice();
@@ -83,7 +83,7 @@ namespace smx_config
             CreateTrayIcon();
 
             // Create the main window.
-            if(!Helpers.LaunchedOnStartup())
+            if (!Helpers.LaunchedOnStartup())
                 ToggleMainWindow();
         }
 
@@ -96,7 +96,7 @@ namespace smx_config
         // circular references.  Instead, we just focus on minimizing CPU overhead.
         void ToggleMainWindow()
         {
-            if(window == null)
+            if (window == null)
             {
                 window = new MainWindow();
                 window.Closed += MainWindowClosed;
@@ -128,7 +128,7 @@ namespace smx_config
         public void BringToForeground()
         {
             // Restore or create the window.  Don't minimize if we're already restored.
-            if(window == null || IsMinimizedToTray())
+            if (window == null || IsMinimizedToTray())
                 ToggleMainWindow();
 
             // Focus the window.
@@ -151,17 +151,17 @@ namespace smx_config
         {
             base.OnExit(e);
 
-            Console.WriteLine("Application exiting");
+            Console.Error.WriteLine("Application exiting");
 
             // Remove the tray icon.
-            if(trayIcon != null)
+            if (trayIcon != null)
             {
                 trayIcon.Visible = false;
                 trayIcon = null;
             }
 
             // Shut down cleanly, to make sure we don't run any threaded callbacks during shutdown.
-            if(CurrentSMXDevice.singleton != null)
+            if (CurrentSMXDevice.singleton != null)
             {
                 CurrentSMXDevice.singleton.Shutdown();
                 CurrentSMXDevice.singleton = null;
@@ -172,13 +172,13 @@ namespace smx_config
         // foreground itself.  Return true if another instance was found.
         private bool ForegroundExistingInstance()
         {
-            bool createdNew = false;
+            var createdNew = false;
             EventWaitHandle SMXConfigEvent = new EventWaitHandle(false, EventResetMode.AutoReset, "SMXConfigEvent", out createdNew);
-            if(!createdNew)
+            if (!createdNew)
             {
                 // Signal the event to foreground the existing instance.
                 SMXConfigEvent.Set();
-                return true;
+        return true;
             }
 
             ThreadPool.RegisterWaitForSingleObject(SMXConfigEvent, ForegroundApplicationCallback, this, Timeout.Infinite, false);
@@ -195,6 +195,9 @@ namespace smx_config
             }));
         }
 
+        /// <summary>
+        /// TODO: pucgenie: Is this thread necessary anymore?
+        /// </summary>
         private void ListenForShutdownRequest()
         {
             // We've already checked that we're the only instance when we get here, so this event shouldn't
@@ -216,15 +219,16 @@ namespace smx_config
         // so we have to use Forms.
         void CreateTrayIcon()
         {
-            Stream iconStream = GetResourceStream(new Uri( "pack://application:,,,/Resources/window%20icon%20grey.ico")).Stream;
-            System.Drawing.Icon icon = new System.Drawing.Icon(iconStream);
+            var icon = new System.Drawing.Icon(GetResourceStream(
+                    new Uri("pack://application:,,,/Resources/window%20icon%20grey.ico")
+                ).Stream);
 
-            trayIcon = new System.Windows.Forms.NotifyIcon();
             trayIcon.Text = "StepManiaX";
             trayIcon.Visible = true;
 
             // Show or hide the application window on click.
-            trayIcon.Click += delegate (object sender, EventArgs e) { ToggleMainWindow();  };
+            // pucgenie: On double-click only (but what about Touch input?)
+            //trayIcon.Click += delegate (object sender, EventArgs e) { ToggleMainWindow();  };
             trayIcon.DoubleClick += delegate (object sender, EventArgs e) { ToggleMainWindow();  };
 
             CurrentSMXDevice.singleton.ConfigurationChanged += delegate(LoadFromConfigDelegateArgs args) {
@@ -236,28 +240,34 @@ namespace smx_config
         }
 
         // Refresh the tray icon when we're connected or disconnected.
-        bool wasConnected;
+        byte wasConnected = 0;
         void RefreshTrayIcon(LoadFromConfigDelegateArgs args, bool force=false)
         {
-            if(trayIcon == null)
-                return;
+            if (trayIcon == null) {
+                Console.Error.WriteLine("Unexpected trayIcon state (null)");
+        return;
+            }
 
-            bool EitherControllerConnected = false;
-            for(int pad = 0; pad < 2; ++pad)
-                if(args.controller[pad].info.connected)
-                    EitherControllerConnected = true;
+            var ConnectedCount = 0;
+            for (int pad = 0; pad < args.controller.Length; ++pad)
+                if (args.controller[pad].info.connected)
+                   ++ConnectedCount;
 
             // Skip the refresh if the connected state didn't change.
-            if(wasConnected == EitherControllerConnected && !force)
-                return;
-            wasConnected = EitherControllerConnected;
+            if (wasConnected == ConnectedCount && !force)
+        return;
+            wasConnected = (byte) ConnectedCount;
 
-            trayIcon.Text = EitherControllerConnected? "StepManiaX (connected)":"StepManiaX (disconnected)";
+            trayIcon.Text = $"{ConnectedCount} SMX pads connected";
 
             // Set the tray icon.
-            string filename = EitherControllerConnected? "window%20icon.ico":"window%20icon%20grey.ico";
-            Stream iconStream = GetResourceStream(new Uri( "pack://application:,,,/Resources/" + filename)).Stream;
-            trayIcon.Icon = new System.Drawing.Icon(iconStream);
+            // TODO: pucgenie: Icons for every constellation (at least: 0, 1., 1.+2.)
+            var filename = ConnectedCount > 0 
+                ? "window%20icon.ico"
+                : "window%20icon%20grey.ico";
+            trayIcon.Icon = new System.Drawing.Icon(GetResourceStream(
+                    new Uri($"pack://application:,,,/Resources/{filename}")
+                ).Stream);
         }
     }
 }

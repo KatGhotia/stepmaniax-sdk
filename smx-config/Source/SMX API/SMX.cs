@@ -154,32 +154,26 @@ namespace SMX
         // Set enabledSensors from an array returned from GetEnabledPanels.
         public void SetEnabledPanels(bool[] panels)
         {
-            for(int i = 0; i < 5; ++i)
-                enabledSensors[i] = 0;
-
-            if(panels[0]) enabledSensors[0] |= 0xF0;
-            if(panels[1]) enabledSensors[0] |= 0x0F;
-            if(panels[2]) enabledSensors[1] |= 0xF0;
-            if(panels[3]) enabledSensors[1] |= 0x0F;
-            if(panels[4]) enabledSensors[2] |= 0xF0;
-            if(panels[5]) enabledSensors[2] |= 0x0F;
-            if(panels[6]) enabledSensors[3] |= 0xF0;
-            if(panels[7]) enabledSensors[3] |= 0x0F;
-            if(panels[8]) enabledSensors[4] |= 0xF0;
+            enabledSensors[0] = (byte) ((panels[0] ? 0xF0 : 0) | (panels[1] ? 0x0F : 0));
+            enabledSensors[1] = (byte) ((panels[2] ? 0xF0 : 0) | (panels[3] ? 0x0F : 0));
+            enabledSensors[2] = (byte) ((panels[4] ? 0xF0 : 0) | (panels[5] ? 0x0F : 0));
+            enabledSensors[3] = (byte) ((panels[6] ? 0xF0 : 0) | (panels[7] ? 0x0F : 0));
+            enabledSensors[4] = (byte) (panels[8] ? 0xF0 : 0);
         }
 
         // Return the index of the first enabled panel, or 1 (up) if no panels
         // are enabled.
-        public int GetFirstEnabledPanel()
+        public int? GetFirstEnabledPanel()
         {
             bool[] enabledPanels = GetEnabledPanels();
-            for(int i = 0; i < 9; ++i)
+            for (int i = 0; i < 9; ++i)
             {
-                if(enabledPanels[i])
-                    return i;
+                if (enabledPanels[i])
+        return i;
             }
 
-            return 0;
+            // pucgenie: Probably not supported by this App.
+            return null;
         }
 
         // The layout of this structure (and the underlying C struct) matches the firmware configuration
@@ -218,25 +212,27 @@ namespace SMX
 
         public void SetLowThresholds(Byte[] values)
         {
-            for(int panel = 0; panel < 9; ++panel)
+            for (int panel = 0; panel < 9; ++panel)
                 panelSettings[panel].loadCellLowThreshold = values[panel];
         }
         
         public void SetHighThresholds(Byte[] values)
         {
-            for(int panel = 0; panel < 9; ++panel)
+            for (int panel = 0; panel < 9; ++panel)
                 panelSettings[panel].loadCellHighThreshold = values[panel];
         }
 
         // Create an empty SMXConfig.
         static public SMXConfig Create()
         {
-            SMXConfig result = new SMXConfig();
-            result.enabledSensors = new Byte[5];
-            result.stepColor = new Byte[3*9];
-            result.panelSettings = new PackedSensorSettings[9];
-            result.platformStripColor = new Byte[3];
-            for(int panel = 0; panel < 9; ++panel)
+            SMXConfig result = new SMXConfig
+            {
+                enabledSensors = new Byte[5],
+                stepColor = new Byte[3 * 9],
+                panelSettings = new PackedSensorSettings[9],
+                platformStripColor = new Byte[3]
+            };
+            for (int panel = 0; panel < 9; ++panel)
             {
                 result.panelSettings[panel].fsrLowThreshold = new Byte[4];
                 result.panelSettings[panel].fsrHighThreshold = new Byte[4];
@@ -252,7 +248,7 @@ namespace SMX
 
         public void setLightAllPanelsMode(bool enable)
         {
-            if(enable)
+            if (enable)
                 autoLightPanelMask = 0xFFFF;
             else
                 refreshAutoLightPanelMask(false);
@@ -262,14 +258,14 @@ namespace SMX
         // enabled panels.  This should be called if enabledSensors is changed.
         public void refreshAutoLightPanelMask(bool onlyIfEnabled=true)
         {
-            if(onlyIfEnabled && getLightAllPanelsMode())
-                return;
+            if (onlyIfEnabled && getLightAllPanelsMode())
+        return;
 
             // Set autoLightPanelMask to just the enabled panels.
             autoLightPanelMask = 0;
-            bool[] enabledPanels = GetEnabledPanels();
-            for(int i = 0; i < 9; ++i)
-                if(enabledPanels[i])
+            var enabledPanels = GetEnabledPanels();
+            for (int i = 0; i < 9; ++i)
+                if (enabledPanels[i])
                     autoLightPanelMask |= (UInt16) (1 << i);
         }
     };  
@@ -310,31 +306,31 @@ namespace SMX
         public bool HasSensorValid(int panel, int sensor, bool checkData = true)
         {
             if (checkData && !bHaveDataFromPanel[panel])
-                return false;
+        return false;
             if (bBadSensorInput[panel * 4 + sensor])
-                return false;
+        return false;
 
             return true;
         }
 
         public bool AnySensorsOnPanelNotResponding(int panel)
         {
-            if(!bHaveDataFromPanel[panel])
-                return false;
-            for(int sensor = 0; sensor < 4; ++sensor)
-                if(bBadSensorInput[panel*4+sensor])
-                    return true;
+            if (!bHaveDataFromPanel[panel])
+        return false;
+            for (int sensor = 0; sensor < 4; ++sensor)
+                if (bBadSensorInput[panel*4 + sensor])
+        return true;
 
             return false;
         }
 
         public bool AnyBadJumpersOnPanel(int panel)
         {
-            if(!bHaveDataFromPanel[panel])
-                return false;
-            for(int sensor = 0; sensor < 4; ++sensor)
-                if(iWrongSensorJumper[panel*4+sensor])
-                    return true;
+            if (!bHaveDataFromPanel[panel])
+        return false;
+            for (int sensor = 0; sensor < 4; ++sensor)
+                if (iWrongSensorJumper[panel*4+sensor])
+        return true;
 
             return false;
         }
@@ -405,7 +401,8 @@ namespace SMX
 
         public static string Version()
         {
-            if(!DLLAvailable()) return "";
+            if (!DLLAvailable())
+        return "(Simulation)";
 
             // I can't find any way to marshal a simple null-terminated string.  Marshalling
             // UnmanagedType.LPStr tries to deallocate the string, which crashes since it's
@@ -413,17 +410,32 @@ namespace SMX
             unsafe {
                 sbyte *p = (sbyte *) SMX_Version();
                 int length = 0;
-                while(p[length] != 0)
+                while (p[length] != 0)
                     ++length;
                 return new string(p, 0, length);
             }
         }
 
+#if DEBUG
+        private static int callCount = 0;
+#endif
+        private static byte smxDLLstatus = 0;
         // Check if the native DLL is available.  This is mostly to avoid exceptions in the designer.
         // This returns false if the DLL doesn't load.
+        // pucgenie: The latest released smx-config App from StepRevolution in 2020 called this method 187 times on startup.
         public static bool DLLAvailable()
         {
-            return LoadLibrary("SMX.dll") != IntPtr.Zero;
+#if DEBUG
+            Console.Out.WriteLine($"DLLAvailable#{callCount+=1:X4} at {DateTime.UtcNow.Ticks:X16}");
+#endif
+            if (smxDLLstatus == 0) {
+                // FIXME: pucgenie: Use a bool to cache it? App needs to be restarted in any case if SMX.dll wasn't available beforehand.
+                smxDLLstatus = (byte)(LoadLibrary("SMX.dll") != IntPtr.Zero
+                    ? 0x1
+                    : 0x2
+                );
+            }
+            return (smxDLLstatus & 0x1) != 0;
         }
 
         // Check if the native DLL exists.  This will return false if SMX.dll is missing entirely,
@@ -431,6 +443,7 @@ namespace SMX
         // us print a more specific error message.
         public static bool DLLExists()
         {
+            // will be called on App startup (once)
             return LoadLibraryEx("SMX.dll", (IntPtr)0, LoadLibraryFlags.LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE) != IntPtr.Zero;
         }
         
@@ -443,15 +456,16 @@ namespace SMX
 
         public static void Start(UpdateCallback callback)
         {
-            if(!DLLAvailable()) return;
+            if (!DLLAvailable())
+        return;
 
             // Sanity check SMXConfig, which should be 250 bytes.  If this is incorrect,
             // check the padding array.
             {
                 SMXConfig config = new SMXConfig();
                 int bytes = Marshal.SizeOf(config);
-                if(bytes != 250)
-                    throw new Exception("SMXConfig is " + bytes + " bytes, but should be 250 bytes");
+                if (bytes != 250)
+        throw new Exception($"SMXConfig is {bytes} bytes, but should be 250 bytes");
             }
 
             // Make a wrapper to convert from the native enum to SMXUpdateCallbackReason.
@@ -459,7 +473,7 @@ namespace SMX
                 SMXUpdateCallbackReason ReasonEnum = (SMXUpdateCallbackReason) Enum.ToObject(typeof(SMXUpdateCallbackReason), reason);
                 callback(PadNumber, ReasonEnum);
             };
-            if(callback == null)
+            if (callback == null)
                 NewCallback = null;
 
             SMX_Start(NewCallback, IntPtr.Zero);
@@ -477,7 +491,8 @@ namespace SMX
 
         public static void Stop()
         {
-            if(!DLLAvailable()) return;
+            if (!DLLAvailable())
+        return;
             SMX_Stop();
         }
 
@@ -488,26 +503,26 @@ namespace SMX
 
         public static void GetInfo(int pad, out SMXInfo info)
         {
-            if(!DLLAvailable()) {
+            if (!DLLAvailable()) {
                 info = new SMXInfo();
-                return;
+        return;
             }
             SMX_GetInfo(pad, out info);
         }
 
         public static UInt16 GetInputState(int pad)
         {
-            if(!DLLAvailable())
-                return 0;
+            if (!DLLAvailable())
+        return 0;
 
             return SMX_GetInputState(pad);
         }
         
         public static bool GetConfig(int pad, out SMXConfig config)
         {
-            if(!DLLAvailable()) {
+            if (!DLLAvailable()) {
                 config = SMXConfig.Create();
-                return false;
+        return false;
             }
 
             return SMX_GetConfig(pad, out config);
@@ -515,7 +530,8 @@ namespace SMX
                 
         public static void SetConfig(int pad, SMXConfig config)
         {
-            if(!DLLAvailable()) return;
+            if (!DLLAvailable())
+        return;
 
             // Always bump the configVersion to the version we support on write.
             config.configVersion = 2;
@@ -552,7 +568,8 @@ namespace SMX
 
         public static void SetSensorTestMode(int pad, SensorTestMode mode, string source = null)
         {
-            if(!DLLAvailable()) return;
+            if (!DLLAvailable())
+        return;
 
             if (!string.IsNullOrEmpty(source))
             {
@@ -560,16 +577,16 @@ namespace SMX
                 foreach(var kvp in m_modeBySource)
                 {
                     if (kvp.Key == source)
-                        continue;
+                continue;
 
                     //Tried to disable test mode but another source set it to something else
                     if (mode == SensorTestMode.Off && kvp.Value != SensorTestMode.Off)
-                        return;
+        return;
                 }
             }
 
-            if (m_sensorHasBeenSetOnce[pad] && mode == m_currentMode[pad]) return;
-
+            if (m_sensorHasBeenSetOnce[pad] && mode == m_currentMode[pad])
+        return;
 
             SMX_SetTestMode(pad, (int) mode);
             m_currentMode[pad] = mode;
@@ -578,9 +595,9 @@ namespace SMX
 
         public static bool GetTestData(int pad, out SMXSensorTestModeData data)
         {
-            if(!DLLAvailable()) {
+            if (!DLLAvailable()) {
                 data = new SMXSensorTestModeData();
-                return false;
+        return false;
             }
 
             return SMX_GetTestData(pad, out data);
@@ -593,40 +610,45 @@ namespace SMX
 
         public static void SetPanelTestMode(PanelTestMode mode)
         {
-            if(!DLLAvailable()) return;
+            if (!DLLAvailable())
+        return;
             SMX_SetPanelTestMode((int) mode);
         }
 
         public static void FactoryReset(int pad)
         {
-            if(!DLLAvailable()) return;
+            if (!DLLAvailable())
+        return;
             SMX_FactoryReset(pad);
         }
 
-
         public static void ForceRecalibration(int pad)
         {
-            if(!DLLAvailable()) return;
+            if (!DLLAvailable())
+        return;
             SMX_ForceRecalibration(pad);
         }
 
         public static void SetLights2(byte[] buf)
         {
-            if(!DLLAvailable()) return;
+            if (!DLLAvailable())
+        return;
 
             SMX_SetLights2(buf, buf.Length);
         }
 
         public static void SMX_SetPlatformLights(byte[] buf)
         {
-            if(!DLLAvailable()) return;
+            if (!DLLAvailable())
+        return;
 
             SMX_SetPlatformLights(buf, buf.Length);
         }
 
         public static void ReenableAutoLights()
         {
-            if(!DLLAvailable()) return;
+            if (!DLLAvailable())
+        return;
 
             SMX_ReenableAutoLights();
         }
@@ -640,16 +662,16 @@ namespace SMX
 
         public static bool LightsAnimation_Load(byte[] buf, int pad, LightsType type, out string error)
         {
-            if(!DLLAvailable())
+            if (!DLLAvailable())
             {
                 error = "SMX.DLL not available";
-                return false;
+        return false;
             }
 
             error = "";
             IntPtr error_pointer;
-            bool result = SMX_LightsAnimation_Load(buf, buf.Length, pad, (int) type, out error_pointer);
-            if(!result)
+            var result = SMX_LightsAnimation_Load(buf, buf.Length, pad, (int) type, out error_pointer);
+            if (!result)
             {
                 // SMX_LightsAnimation_Load takes a char **error, which is set to the error
                 // string.
@@ -661,7 +683,8 @@ namespace SMX
 
         public static void LightsAnimation_SetAuto(bool enable)
         {
-            if(!DLLAvailable()) return;
+            if (!DLLAvailable())
+        return;
             SMX_LightsAnimation_SetAuto(enable);
         }
         
@@ -677,8 +700,8 @@ namespace SMX
         private delegate void InternalLightsUploadCallback(int reason, IntPtr user);
         public static void LightsUpload_BeginUpload(int pad, LightsUploadCallback callback)
         {
-            if(!DLLAvailable())
-                return;
+            if (!DLLAvailable())
+        return;
 
             GCHandle handle = new GCHandle();
             InternalLightsUploadCallback wrapper = delegate(int progress, IntPtr user)
@@ -688,7 +711,7 @@ namespace SMX
                 } finally {
                     // When progress = 100, this is the final call and we can release this
                     // object to GC.
-                    if(progress == 100)
+                    if (progress == 100)
                         handle.Free();
                 }
             };

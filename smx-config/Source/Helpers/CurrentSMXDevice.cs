@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Windows.Threading;
 using System.Windows.Controls;
 using System.ComponentModel;
+using System.Windows.Forms.VisualStyles;
 
 namespace smx_config
 {
@@ -31,18 +32,23 @@ namespace smx_config
         // Data for each of two controllers:
         public LoadFromConfigDelegateArgsPerController[] controller;
 
-        // If we have more than one connected controller, we expect them to be the same version.
-        // Return the newest firmware version that's connected.
-        public int firmwareVersion()
+        // If we have more than one connected controller, we don't expect them to be the same version anymore.
+        // Return the {oldest, newest} firmware version that's connected.
+        public short[] firmwareVersion()
         {
-            int result = 1;
-            foreach(var data in controller)
+            short minVersion = short.MaxValue, maxVersion = short.MinValue;
+            foreach (var data in controller)
             {
-                if(data.info.connected && data.info.m_iFirmwareVersion > result)
-                    result = data.info.m_iFirmwareVersion;
-
+                if (data.info.connected) {
+                    if (data.info.m_iFirmwareVersion > maxVersion) {
+                        maxVersion = data.info.m_iFirmwareVersion;
+                    }
+                    if (data.info.m_iFirmwareVersion < minVersion) {
+                        minVersion = data.info.m_iFirmwareVersion;
+                    }
+                }
             }
-            return result;
+            return new short[]{minVersion, maxVersion,};
         }
 
         // The control that changed the configuration (passed to FireConfigurationChanged).
@@ -105,23 +111,23 @@ namespace smx_config
             //
             // For configuration, we only check for connection state changes.  Actual configuration
             // changes are fired by controls via FireConfigurationChanged.
-            for(int pad = 0; pad < 2; ++pad)
+            for (int pad = 0; pad < 2; ++pad)
             {
                 LoadFromConfigDelegateArgsPerController controller = args.controller[pad];
-                if(WasConnected[pad] != controller.info.connected)
+                if (WasConnected[pad] != controller.info.connected)
                 {
                     args.ConfigurationChanged = true;
                     args.ConnectionsChanged = true;
                     WasConnected[pad] = controller.info.connected;
                 }
 
-                if(LastInputs[pad] == null || !Enumerable.SequenceEqual(controller.inputs, LastInputs[pad]))
+                if (LastInputs[pad] == null || !Enumerable.SequenceEqual(controller.inputs, LastInputs[pad]))
                 {
                     args.InputChanged = true;
                     LastInputs[pad] = controller.inputs;
                 }
 
-                if(!controller.test_data.Equals(LastTestData[pad]))
+                if (!controller.test_data.Equals(LastTestData[pad]))
                 {
                     args.TestDataChanged = true;
                     LastTestData[pad] = controller.test_data;
@@ -129,7 +135,7 @@ namespace smx_config
             }
 
             // Only fire the delegate if something has actually changed.
-            if(args.ConfigurationChanged || args.InputChanged || args.TestDataChanged)
+            if (args.ConfigurationChanged || args.InputChanged || args.TestDataChanged)
                 ConfigurationChanged?.Invoke(args);
         }
 
@@ -143,10 +149,12 @@ namespace smx_config
 
         public LoadFromConfigDelegateArgs GetState()
         {
-            LoadFromConfigDelegateArgs args = new LoadFromConfigDelegateArgs();
-            args.controller = new LoadFromConfigDelegateArgsPerController[2];
+            LoadFromConfigDelegateArgs args = new LoadFromConfigDelegateArgs
+            {
+                controller = new LoadFromConfigDelegateArgsPerController[2]
+            };
 
-            for(int pad = 0; pad < 2; ++pad)
+            for (int pad = 0; pad < 2; ++pad)
             {
                 LoadFromConfigDelegateArgsPerController controller;
                 controller.test_data = new SMX.SMXSensorTestModeData();
@@ -154,7 +162,7 @@ namespace smx_config
                 // Expand the inputs mask to an array.
                 UInt16 Inputs = SMX.SMX.GetInputState(pad);
                 controller.inputs = new bool[9];
-                for(int i = 0; i < 9; ++i)
+                for (int i = 0; i < 9; ++i)
                     controller.inputs[i] = (Inputs & (1 << i)) != 0;
                 SMX.SMX.GetInfo(pad, out controller.info);
                 SMX.SMX.GetConfig(pad, out controller.config);
@@ -206,21 +214,21 @@ namespace smx_config
 
             Owner.Loaded += delegate(object sender, RoutedEventArgs e)
             {
-                if(CurrentSMXDevice.singleton != null)
+                if (CurrentSMXDevice.singleton != null)
                     CurrentSMXDevice.singleton.ConfigurationChanged += ConfigurationChanged;
                 Refresh();
             };
 
             Owner.Unloaded += delegate(object sender, RoutedEventArgs e)
             {
-                if(CurrentSMXDevice.singleton != null)
+                if (CurrentSMXDevice.singleton != null)
                     CurrentSMXDevice.singleton.ConfigurationChanged -= ConfigurationChanged;
             };
         }
 
         private void ConfigurationChanged(LoadFromConfigDelegateArgs args)
         {
-            if(args.ConfigurationChanged ||
+            if (args.ConfigurationChanged ||
                 (RefreshOnInputChange && args.InputChanged) ||
                 (RefreshOnTestDataChange && args.TestDataChanged))
             {
@@ -230,7 +238,7 @@ namespace smx_config
 
         private void Refresh()
         {
-            if(CurrentSMXDevice.singleton != null)
+            if (CurrentSMXDevice.singleton != null)
                 Callback(CurrentSMXDevice.singleton.GetState());
         }
     };
@@ -254,7 +262,7 @@ namespace smx_config
             Callback = callback;
 
             // This is available when the application is running, but will be null in the XAML designer.
-            if(CurrentSMXDevice.singleton == null)
+            if (CurrentSMXDevice.singleton == null)
                 return;
 
             Owner.Loaded += delegate(object sender, RoutedEventArgs e)
@@ -276,7 +284,7 @@ namespace smx_config
 
         private void Refresh()
         {
-            if(CurrentSMXDevice.singleton != null)
+            if (CurrentSMXDevice.singleton != null)
                 Callback(CurrentSMXDevice.singleton.GetState());
         }
     };

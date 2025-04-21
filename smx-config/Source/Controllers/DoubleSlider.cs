@@ -74,7 +74,7 @@ namespace smx_config
         private static void SliderValueChangedCallback(DependencyObject target, DependencyPropertyChangedEventArgs args)
         {
             DoubleSlider slider = target as DoubleSlider;
-            if(slider.ValueChanged != null)
+            if (slider.ValueChanged != null)
                 slider.ValueChanged.Invoke(slider);
         }
 

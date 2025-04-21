@@ -71,7 +71,7 @@ namespace smx_config
             foreach(ThresholdSettings.PanelAndSensor panelAndSensor in customSensors)
             {
                 if(panelAndSensor.panel == Panel && panelAndSensor.sensor == sensor)
-                    return true;
+        return true;
             }
             return false;
         }
