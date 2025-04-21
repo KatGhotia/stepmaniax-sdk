@@ -27,12 +27,12 @@ namespace SMXJSON
     {
         public static T Get<T>(this List<object> array, int idx, T defaultValue)
         {
-            if(idx < 0 || idx >= array.Count)
-                return defaultValue;
+            if (idx < 0 || idx >= array.Count)
+        return defaultValue;
 
-            object value = array[idx];
-            if(!typeof(T).IsAssignableFrom(value.GetType()))
-                return defaultValue;
+            var value = array[idx];
+            if (!typeof(T).IsAssignableFrom(value.GetType()))
+        return defaultValue;
 
             return (T) value;
         }
@@ -58,10 +58,10 @@ namespace SMXJSON
         public static T Get<T>(this Dictionary<string, Object> dict, string key, T defaultValue)
         {
             object value;
-            if(!dict.TryGetValue(key, out value))
+            if (!dict.TryGetValue(key, out value))
                 return defaultValue;
 
-            if(!typeof(T).IsAssignableFrom(value.GetType()))
+            if (!typeof(T).IsAssignableFrom(value.GetType()))
                 return defaultValue;
 
             return (T) value;
@@ -72,10 +72,10 @@ namespace SMXJSON
         public static bool GetValue<T>(this Dictionary<string, Object> dict, string key, ref T result)
         {
             object value;
-            if(!dict.TryGetValue(key, out value))
+            if (!dict.TryGetValue(key, out value))
                 return false;
 
-            if(!typeof(T).IsAssignableFrom(result.GetType()))
+            if (!typeof(T).IsAssignableFrom(result.GetType()))
                 return false;
 
             result = (T) value;
@@ -101,14 +101,6 @@ namespace SMXJSON
 
     class SerializeJSON
     {
-        static public string Serialize(object obj)
-        {
-            StringBuilder output = new StringBuilder();
-            Serialize(obj, output, 0);
-            output.Append('\n');
-            return output.ToString();
-        }
-
         // Add start-of-line indentation.
         static private void AddIndent(StringBuilder output, int indent)
         {
@@ -202,46 +194,46 @@ namespace SMXJSON
         // Serialize an object based on its type.
         static public void Serialize(object obj, StringBuilder output, int indent)
         {
-            if(obj == null) { output.Append("null"); return; }
+            if (obj == null) { output.Append("null"); return; }
 
-            if(typeof(Int32).IsInstanceOfType(obj)) { output.Append(obj.ToString()); return; }
-            if(typeof(float).IsInstanceOfType(obj)) { output.Append(obj.ToString()); return; }
-            if(typeof(Double).IsInstanceOfType(obj)) { output.Append(obj.ToString()); return; }
+            if (typeof(Int32).IsInstanceOfType(obj)) { output.Append(obj.ToString()); return; }
+            if (typeof(float).IsInstanceOfType(obj)) { output.Append(obj.ToString()); return; }
+            if (typeof(Double).IsInstanceOfType(obj)) { output.Append(obj.ToString()); return; }
 
-            if(typeof(Boolean).IsInstanceOfType(obj)) { SerializeObject((Boolean) obj, output); return; }
-            if(typeof(string).IsInstanceOfType(obj)) { SerializeObject((string) obj, output); return; }
+            if (typeof(Boolean).IsInstanceOfType(obj)) { SerializeObject((Boolean) obj, output); return; }
+            if (typeof(string).IsInstanceOfType(obj)) { SerializeObject((string) obj, output); return; }
 
             // C# generics aren't very well designed, so this is clunky.  We should be able to cast
             // a List<string> to List<object>, but some overzealous language designers thought that
             // since that has some unsafe uses, we shouldn't be allowed to use it for perfectly safe
             // uses either (eg. read-only access).
-            if(obj.GetType().GetGenericTypeDefinition().IsAssignableFrom(typeof(List<>)))
+            if (obj.GetType().GetGenericTypeDefinition().IsAssignableFrom(typeof(List<>)))
             {
                 Type valueType = obj.GetType().GetGenericArguments()[0];
-                if(valueType == typeof(object)) { SerializeObject((List<object>)obj, output, indent); return; }
-                if(valueType == typeof(Int32)) { SerializeObject((List<Int32>)obj, output, indent); return; }
-                if(valueType == typeof(float)) { SerializeObject((List<float>)obj, output, indent); return; }
-                if(valueType == typeof(Double)) { SerializeObject((List<Double>)obj, output, indent); return; }
-                if(valueType == typeof(Boolean)) { SerializeObject((List<Boolean>)obj, output, indent); return; }
-                if(valueType == typeof(string)) { SerializeObject((List<string>)obj, output, indent); return; }
+                if (valueType == typeof(object)) { SerializeObject((List<object>)obj, output, indent); return; }
+                if (valueType == typeof(Int32)) { SerializeObject((List<Int32>)obj, output, indent); return; }
+                if (valueType == typeof(float)) { SerializeObject((List<float>)obj, output, indent); return; }
+                if (valueType == typeof(Double)) { SerializeObject((List<Double>)obj, output, indent); return; }
+                if (valueType == typeof(Boolean)) { SerializeObject((List<Boolean>)obj, output, indent); return; }
+                if (valueType == typeof(string)) { SerializeObject((List<string>)obj, output, indent); return; }
             }
 
-            if(obj.GetType().GetGenericTypeDefinition().IsAssignableFrom(typeof(Dictionary<,>)))
+            if (obj.GetType().GetGenericTypeDefinition().IsAssignableFrom(typeof(Dictionary<,>)))
             {
-                Type keyType = obj.GetType().GetGenericArguments()[0];
-                if(typeof(string).IsAssignableFrom(keyType))
+                var keyType = obj.GetType().GetGenericArguments()[0];
+                if (typeof(string).IsAssignableFrom(keyType))
                 {
                     Type valueType = obj.GetType().GetGenericArguments()[1];
-                    if(valueType == typeof(object)) { SerializeObject((Dictionary<string, object>)obj, output, indent); return; }
-                    if(valueType == typeof(Int32)) { SerializeObject((Dictionary<string, Int32>)obj, output, indent); return; }
-                    if(valueType == typeof(float)) { SerializeObject((Dictionary<string, float>)obj, output, indent); return; }
-                    if(valueType == typeof(Double)) { SerializeObject((Dictionary<string, Double>)obj, output, indent); return; }
-                    if(valueType == typeof(Boolean)) { SerializeObject((Dictionary<string, Boolean>)obj, output, indent); return; }
-                    if(valueType == typeof(string)) { SerializeObject((Dictionary<string, string>)obj, output, indent); return; }
+                    if (valueType == typeof(object)) { SerializeObject((Dictionary<string, object>)obj, output, indent); return; }
+                    if (valueType == typeof(Int32)) { SerializeObject((Dictionary<string, Int32>)obj, output, indent); return; }
+                    if (valueType == typeof(float)) { SerializeObject((Dictionary<string, float>)obj, output, indent); return; }
+                    if (valueType == typeof(Double)) { SerializeObject((Dictionary<string, Double>)obj, output, indent); return; }
+                    if (valueType == typeof(Boolean)) { SerializeObject((Dictionary<string, Boolean>)obj, output, indent); return; }
+                    if (valueType == typeof(string)) { SerializeObject((Dictionary<string, string>)obj, output, indent); return; }
                 }
             }
 
-            throw new JSONError("Unsupported type: " + obj.GetType());
+            throw new JSONError($"Unsupported type: {obj.GetType()}");
         }
     }
 
@@ -249,7 +241,7 @@ namespace SMXJSON
     {
         static private void SkipWhitespace(StringReader reader)
         {
-            while(true)
+            while (true)
             {
                 int c = reader.Peek();
                 switch(c)
@@ -258,9 +250,9 @@ namespace SMXJSON
                 case '\n':
                 case '\t':
                     reader.Read();
-                    continue;
+            continue;
                 default:
-                    return;
+        return;
                 }
             }
         }
@@ -272,11 +264,12 @@ namespace SMXJSON
         }
 
         // Parse JSON, expecting a specific outer type.  On parse error, return a default value.
+        // TODO: pucgenie: Why return a default value?! Exception!
         public static T Parse<T>(string json) where T: new()
         {
             Object result = Parse(json);
-            if(!typeof(T).IsAssignableFrom(result.GetType()))
-                return new T();
+            if (!typeof(T).IsAssignableFrom(result.GetType()))
+        return new T();
             return (T) result;
         }
 
@@ -287,13 +280,13 @@ namespace SMXJSON
         // a default value.
         public static Object ParseWithExceptions(StringReader reader)
         {
-            Object result = ParseJSONValue(reader);
+            var result = ParseJSONValue(reader);
 
             SkipWhitespace(reader);
 
             // Other than whitespace, we should be at the end of the file.
-            if(reader.Read() != -1)
-                throw new ParseError(reader, "Unexpected data at the end of the string");
+            if (reader.Read() != -1)
+        throw new ParseError(reader, "Unexpected data at the end of the string");
 
             return result;
         }
@@ -305,42 +298,44 @@ namespace SMXJSON
             switch(nextCharacter)
             {
             case '"':
-                return ReadJSONString(reader);
+            StringBuilder sb = new StringBuilder();
+            ReadJSONString(reader, sb);
+        return sb.ToString();
             case '{':
-                return ReadJSONDictionary(reader);
+        return ReadJSONDictionary(reader);
             case '[':
-                return ReadJSONArray(reader);
+        return ReadJSONArray(reader);
             }
-            if(nextCharacter == '-' || (nextCharacter >= '0' && nextCharacter <= '9'))
-                return ReadJSONNumber(reader);
+            if (nextCharacter == '-' || (nextCharacter >= '0' && nextCharacter <= '9'))
+        return ReadJSONNumber(reader);
 
-            if(reader.Peek() == 'n')
+            if (reader.Peek() == 'n')
             {
                 // The only valid value this can be is "null".
                 Expect(reader, 'n');
                 Expect(reader, 'u');
                 Expect(reader, 'l');
                 Expect(reader, 'l');
-                return null;
+        return null;
             }
 
-            if(reader.Peek() == 't')
+            if (reader.Peek() == 't')
             {
                 Expect(reader, 't');
                 Expect(reader, 'r');
                 Expect(reader, 'u');
                 Expect(reader, 'e');
-                return true;
+        return true;
             }
 
-            if(reader.Peek() == 'f')
+            if (reader.Peek() == 'f')
             {
                 Expect(reader, 'f');
                 Expect(reader, 'a');
                 Expect(reader, 'l');
                 Expect(reader, 's');
                 Expect(reader, 'e');
-                return true;
+        return true;
             }
 
             throw new ParseError(reader, "Unexpected token");
@@ -358,39 +353,41 @@ namespace SMXJSON
         static private List<Object> ReadJSONArray(StringReader reader)
         {
             Expect(reader, '[');
-            List<Object> result = new List<Object>();
-            while(true)
+            var result = new List<Object>();
+            while (true)
             {
                 SkipWhitespace(reader);
-                if(reader.Peek() == ']')
+                if (reader.Peek() == ']')
                 {
                     reader.Read();
-                    return result;
+        return result;
                 }
 
-                if(result.Count > 0)
+                if (result.Count > 0)
                 {
                     int comma = reader.Read();
-                    if(comma == -1)
-                        throw new ParseError(reader, "Unexpected EOF reading array");
-                    if(comma != ',')
-                        throw new ParseError(reader, "Expected ',', got " + comma + " reading array");
+                    if (comma == -1)
+        throw new ParseError(reader, "Unexpected EOF reading array");
+                    if (comma != ',')
+        throw new ParseError(reader, "Expected ',', got " + comma + " reading array");
                     SkipWhitespace(reader);
                 }
 
-                Object value = ParseJSONValue(reader);
-                result.Add(value);
+                result.Add(ParseJSONValue(reader));
             }
         }
         static private Dictionary<string, Object> ReadJSONDictionary(StringReader reader)
         {
             Expect(reader, '{');
 
-            Dictionary<string, Object> result = new Dictionary<string, Object>();
+            var result = new Dictionary<string, Object>();
 
-            while(true)
+            StringBuilder sb = new StringBuilder();
+            while (true)
             {
-                string key = ReadJSONString(reader);
+                ReadJSONString(reader, sb);
+                string key = sb.ToString();
+                sb.Length = 0;
                 Expect(reader, ':');
                 Object value = ParseJSONValue(reader);
                 result.Add(key, value);
@@ -399,33 +396,37 @@ namespace SMXJSON
                 switch(reader.Read())
                 {
                 case '}':
-                    return result;
+        return result;
                 case ',':
-                    continue;
+            continue;
                 case -1:
-                    throw new ParseError(reader, "Unexpected EOF reading dictionary");
+        throw new ParseError(reader, "Unexpected EOF reading dictionary");
                 default:
-                    throw new ParseError(reader, "Unexpected token reading dictionary");
+        throw new ParseError(reader, "Unexpected token reading dictionary");
                 }
             }
         }
 
-        static private string ReadJSONString(StringReader reader)
+        /// <summary>
+        /// Save result StringBuilder length before and reset if errors occur.
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="result"></param>
+        /// <exception cref="ParseError"></exception>
+        static private void ReadJSONString(StringReader reader, StringBuilder result)
         {
             Expect(reader, '"');
 
-            StringBuilder result = new StringBuilder();
-
-            while(true)
+            while (true)
             {
                 int c = reader.Read();
-                if(c == -1)
-                    throw new ParseError(reader, "Unexpected EOF reading string");
-                if(c == '"')
-                    break;
+                if (c == -1)
+        throw new ParseError(reader, "Unexpected EOF reading string");
+                if (c == '"')
+            break;
 
                 // XXX: untested
-                if(c == '\\')
+                if (c == '\\')
                 {
                     c = reader.Read();
                     switch(c)
@@ -443,14 +444,14 @@ namespace SMXJSON
                     {
                         // Parse a \u1234 escape.
                         int codePoint = 0;
-                        for(int i = 0; i < 4; ++i)
+                        for (int i = 0; i < 4; ++i)
                         {
                             codePoint *= 10;
                             c = reader.Read();
-                            if(c == -1)
-                                throw new ParseError(reader, "Unexpected EOF reading string");
-                            if(c < '0' || c > '9')
-                                throw new ParseError(reader, "Unexpected token " + c + " reading Unicode escape");
+                            if (c == -1)
+        throw new ParseError(reader, "Unexpected EOF reading string");
+                            if (c < '0' || c > '9')
+        throw new ParseError(reader, "Unexpected token " + c + " reading Unicode escape");
                             codePoint += c - (int) '0';
                         }
                         result.Append((char) codePoint);
@@ -458,75 +459,73 @@ namespace SMXJSON
                     }
 
                     default:
-                        throw new ParseError(reader, "Unrecognized escape sequence in string: \\" + (char) c);
+        throw new ParseError(reader, "Unrecognized escape sequence in string: \\" + (char) c);
                     }
 
-                    continue;
+            continue;
                 }
 
                 result.Append((char) c);
             }
-
-            return result.ToString();
         }
 
         static private double ReadJSONNumber(StringReader reader)
         {
             StringBuilder number = new StringBuilder();
             bool negative = false;
-            if(reader.Peek() == '-')
+            if (reader.Peek() == '-')
             {
                 negative = true;
                 reader.Read();
             }
 
             int nextCharacter = reader.Read();
-            if(nextCharacter == '0')
+            if (nextCharacter == '0')
                 number.Append((char) nextCharacter);
             else
             {
-                if(nextCharacter < '1' || nextCharacter > '9')
-                    throw new ParseError(reader, "Unexpected token reading number");
+                if (nextCharacter < '1' || nextCharacter > '9')
+        throw new ParseError(reader, "Unexpected token reading number");
                 number.Append((char) nextCharacter);
 
-                while(reader.Peek() >= '0' && reader.Peek() <= '9')
+                while (reader.Peek() >= '0' && reader.Peek() <= '9')
                     number.Append((char) reader.Read());
             }
 
-            if(reader.Peek() == '.')
+            if (reader.Peek() == '.')
             {
                 number.Append(reader.Read());
 
-                if(reader.Peek() < '0' || reader.Peek() > '9')
-                    throw new ParseError(reader, "Unexpected token reading number");
+                if (reader.Peek() < '0' || reader.Peek() > '9')
+        throw new ParseError(reader, "Unexpected token reading number");
 
-                while(reader.Peek() >= '0' && reader.Peek() <= '9')
+                while (reader.Peek() >= '0' && reader.Peek() <= '9')
                     number.Append((char) reader.Read());
             }
 
-            if(reader.Peek() == 'e' || reader.Peek() == 'E')
+            if (reader.Peek() == 'e' || reader.Peek() == 'E')
             {
                 number.Append((char) reader.Read());
-                if(reader.Peek() == '+' || reader.Peek() == '-')
-                    number.Append((char) reader.Read());
+                if (reader.Peek() == '+' || reader.Peek() == '-')
+        number.Append((char) reader.Read());
 
-                if(reader.Peek() < '0' || reader.Peek() > '9')
-                    throw new ParseError(reader, "Unexpected token reading number");
+                if (reader.Peek() < '0' || reader.Peek() > '9')
+        throw new ParseError(reader, "Unexpected token reading number");
 
-                while(true)
+                while (true)
                 {
                     nextCharacter = reader.Read();
-                    if(nextCharacter < '0' || nextCharacter > '9')
+                    if (nextCharacter < '0' || nextCharacter > '9')
                         break;
                     number.Append((char) nextCharacter);
                 }
             }
 
             double result;
-            if(!Double.TryParse(number.ToString(), out result))
-                throw new ParseError(reader, "Unexpected error parsing number \"" + number.ToString() + "\"");
+            if (!Double.TryParse(number.ToString(), out result))
+        throw new ParseError(reader, $"Unexpected error parsing number \"{number.ToString()}\"");
 
-            if(negative)
+            if (negative)
                 result = -result;
 
             return result;

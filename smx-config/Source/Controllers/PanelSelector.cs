@@ -118,13 +118,13 @@ namespace smx_config
         {
             PanelColorButton Button = e.Source as PanelColorButton;
             if (Button == null)
-                return false;
+        return false;
 
             // A color is being dropped from another button.  Don't just update our color, since
             // that will just change the button color and not actually apply it.
             DataObject data = e.Data as DataObject;
             if (data == null)
-                return false;
+        return false;
 
             // Parse the color being dragged onto us, and set it.
             Color color = Helpers.ParseColorString(data.GetData(typeof(string)) as string);
@@ -166,20 +166,19 @@ namespace smx_config
             SMX.SMXConfig config = args.controller[pad].config;
 
             if (!args.controller[pad].info.connected)
-                return false;
+        return false;
 
-            int PanelIndex = Panel % 9;
-            bool[] enabledPanels = config.GetEnabledPanels();
-            return enabledPanels[PanelIndex];
+            var enabledPanels = config.GetEnabledPanels();
+            return enabledPanels[Panel % 9];
         }
 
         public override void setColor(Color color)
         {
             // Apply the change and save it to the device.
-            int pad = getPadNo();
+            var pad = getPadNo();
             SMX.SMXConfig config;
             if (!SMX.SMX.GetConfig(pad, out config))
-                return;
+        return;
 
             // Light colors are 8-bit values, but we only use values between 0-170.  Higher values
             // don't make the panel noticeably brighter, and just draw more power.
@@ -295,7 +294,7 @@ namespace smx_config
             int pad = getPadNo();
             SMX.SMXConfig config;
             if (!SMX.SMX.GetConfig(pad, out config))
-                return Color.FromRgb(0, 0, 0);
+        return Color.FromRgb(0, 0, 0);
 
             return Color.FromRgb(config.platformStripColor[0], config.platformStripColor[1], config.platformStripColor[2]);
         }
@@ -356,7 +355,7 @@ namespace smx_config
             for (int i = 0; i < 9; i++)
             {
                 if (sender == EnabledPanelButtons[i])
-                    return i;
+        return i;
             }
 
             return 0;

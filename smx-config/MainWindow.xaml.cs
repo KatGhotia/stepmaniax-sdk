@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Interop;
+using System.Text;
 
 namespace smx_config
 {
@@ -186,40 +187,41 @@ namespace smx_config
                 // Don't use ActivePads here.  Even if P1 is selected for configuration,
                 // we can still be controlling animations for P2, so check both connected
                 // pads.
-                bool shouldConfirmExit = false;
-                for(int pad = 0; pad < 2; ++pad)
+                var shouldConfirmExit = false;
+                for (int pad = 0; pad < 2; ++pad)
                 {
                     //Ensure that the tool set the sensor test to off before closing
                     SMX.SMX.SetSensorTestMode(pad, SMX.SMX.SensorTestMode.Off);
 
                     SMX.SMXConfig config;
-                    if(!SMX.SMX.GetConfig(pad, out config))
+                    if (!SMX.SMX.GetConfig(pad, out config))
                         continue;
 
                     // If the firmware is version 4 or higher, it supports animations directly.
                     // The user can upload GIF animations and doesn't need to leave us running
                     // for them to work.  You can still use this tool to drive animations, but
                     // don't confirm exiting.
-                    if(config.IsNewGen())
-                        continue;
+                    if (config.IsNewGen())
+                continue;
 
                     // If AutoLightingUsePressedAnimations isn't set, the panel is using step
                     // coloring instead of pressed animations.  All firmwares support this.
                     // Don't confirm exiting for this mode.
-                    if((config.configFlags & SMX.SMXConfigFlags.AutoLightingUsePressedAnimations) == 0)
-                        continue;
+                    if ((config.configFlags & SMX.SMXConfigFlags.AutoLightingUsePressedAnimations) == 0)
+                continue;
 
                     shouldConfirmExit = true;
                 }
 
-                if(!shouldConfirmExit)
-                    return;
+                if (!shouldConfirmExit)
+        return;
 
                 MessageBoxResult result = MessageBox.Show(
-                    "Close StepManiaX configuration?\n\n" +
-                    "GIF animations will keep playing if the application is minimized.",
+@"Close StepManiaX configuration?
+
+GIF animations will keep playing if the application is minimized.",
                     "StepManiaX", System.Windows.MessageBoxButton.YesNo);
-                if(result == MessageBoxResult.No)
+                if (result == MessageBoxResult.No)
                     e.Cancel = true;
             };
 
@@ -237,16 +239,16 @@ namespace smx_config
             //
             // Don't do this for custom, inner-sensors or outer-sensors.  Those are always shown in
             // advanced mode.
-            List<ThresholdSettings.PanelAndSensor> panelAndSensors = ThresholdSettings.GetControlledSensorsForSliderType(type, config.HasAllPanels(), false);
-            if(type == "custom-sensors" || type == "inner-sensors" || type == "outer-sensors")
+            var panelAndSensors = ThresholdSettings.GetControlledSensorsForSliderType(type, config.HasAllPanels(), false);
+            if (type == "custom-sensors" || type == "inner-sensors" || type == "outer-sensors")
             {
-                if(!config.HasAllPanels() || !config.isFSR())
-                    return false;
+                if (!config.HasAllPanels() || !config.isFSR())
+        return false;
             }
             else
             {
-                if(panelAndSensors.Count == 0)
-                    return false;
+                if (panelAndSensors.Count == 0)
+        return false;
             }
 
             // Hide thresholds that only affect panels that are disabled, so we don't show
@@ -404,10 +406,9 @@ namespace smx_config
             ConnectedPads.Visibility = EitherControllerConnected ? Visibility.Visible : Visibility.Hidden;
             PanelColorP1.Visibility = args.controller[0].info.connected ? Visibility.Visible : Visibility.Collapsed;
             PanelColorP2.Visibility = args.controller[1].info.connected ? Visibility.Visible : Visibility.Collapsed;
-            EnableCenterTopSensorCheckbox.Visibility =
-            P1_Floor.Visibility =
-            P2_Floor.Visibility =
-                args.firmwareVersion() >= 5 ? Visibility.Visible : Visibility.Collapsed;
+            // TODO: pucgenie: Take into account minVersion of firmware for selectively hiding unavailable options
+            EnableCenterTopSensorCheckbox.Visibility = P1_Floor.Visibility = P2_Floor.Visibility =
+                args.firmwareVersion()[1] >= 5 ? Visibility.Visible : Visibility.Collapsed;
 
             DebounceNodelayBox.Text = firstConfig.debounceNodelayMilliseconds.ToString();
             DebounceDelayBox.Text = firstConfig.debounceDelayMs.ToString();
@@ -497,14 +498,14 @@ namespace smx_config
 
             // If our selected button isn't enabled (or no button is selected), try to select a
             // different one.
-            if(selectedButton == null || !selectedButton.isEnabled(args))
+            if (selectedButton == null || !selectedButton.isEnabled(args))
             {
-                foreach(ColorButton button in buttons)
+                foreach (ColorButton button in buttons)
                 {
-                    if(button.isEnabled(args))
+                    if (button.isEnabled(args))
                     {
                         selectedButton = button;
-                        break;
+                break;
                     }
                 }
             }
@@ -594,12 +595,12 @@ namespace smx_config
         // without clobbering separate configurations.
         bool ConfigurationsSynced(SMX.SMXConfig config1, SMX.SMXConfig config2)
         {
-            if(!Enumerable.SequenceEqual(config1.GetLowThresholds(), config2.GetLowThresholds()))
-                return false;
-            if(!Enumerable.SequenceEqual(config1.GetHighThresholds(), config2.GetHighThresholds()))
-                return false;
-            if(!Enumerable.SequenceEqual(config1.enabledSensors, config2.enabledSensors))
-                return false;
+            if (!Enumerable.SequenceEqual(config1.GetLowThresholds(), config2.GetLowThresholds()))
+        return false;
+            if (!Enumerable.SequenceEqual(config1.GetHighThresholds(), config2.GetHighThresholds()))
+        return false;
+            if (!Enumerable.SequenceEqual(config1.enabledSensors, config2.enabledSensors))
+        return false;
             return true;
         }
 
@@ -700,8 +701,8 @@ namespace smx_config
 
             error = null;
             if (ushort.TryParse(box.Text, out ushort result))
-                return result;
-            error = "Update failed : " + title + " has a wrong value";
+        return result;
+            error = $"Update failed : {title} has a wrong value";
             return default;
         }
 
@@ -714,7 +715,7 @@ namespace smx_config
             error = null;
             if (byte.TryParse(box.Text, out byte result))
                 return result;
-            error = "Update failed : " + title + " has a wrong value";
+            error = $"Update failed : {title} has a wrong value";
             return default;
         }
 
@@ -743,46 +744,54 @@ namespace smx_config
 
         private void ExportSettings(object sender, RoutedEventArgs e)
         {
+            StringBuilder sb = new StringBuilder();
             // Save the current thresholds on the first available pad as a preset.
             foreach(Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
             {
                 int pad = activePad.Item1;
                 SMX.SMXConfig config = activePad.Item2;
-                string json = SMXHelpers.ExportSettingsToJSON(config);
+                SMXHelpers.ExportSettingsToJSON(config, sb);
+                string json = sb.ToString();
+                sb.Length = 0;
 
                 Microsoft.Win32.SaveFileDialog dialog = new Microsoft.Win32.SaveFileDialog();
                 dialog.FileName = "StepManiaX settings";
                 dialog.DefaultExt = ".smxcfg";
                 dialog.Filter = "StepManiaX settings (.smxcfg)|*.smxcfg";
-                bool? result = dialog.ShowDialog();
-                if(result == null || !(bool)result)
-                    return;
+                bool result = dialog.ShowDialog().GetValueOrDefault(false);
+                if (!result)
+        return;
 
                 System.IO.File.WriteAllText(dialog.FileName, json);
                 return;
             }
         }
 
-        private void ImportSettings(object sender, RoutedEventArgs e)
+        private void ImportSettings(object sender, RoutedEventArgs evt)
         {
             // Prompt for a file to read.
             Microsoft.Win32.OpenFileDialog dialog = new Microsoft.Win32.OpenFileDialog();
             dialog.FileName = "StepManiaX settings";
             dialog.DefaultExt = ".smxcfg";
             dialog.Filter = "StepManiaX settings (.smxcfg)|*.smxcfg";
-            bool? result = dialog.ShowDialog();
-            if(result == null || !(bool)result)
-                return;
+            bool result = dialog.ShowDialog().GetValueOrDefault(false);
+            if (!result)
+        return;
 
-            string json = Helpers.ReadFile(dialog.FileName);
+            string json = System.IO.File.ReadAllText(dialog.FileName);
 
             // Apply settings from the file to all active pads.
-            foreach(Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
+            foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
             {
                 int pad = activePad.Item1;
                 SMX.SMXConfig config = activePad.Item2;
 
-                SMXHelpers.ImportSettingsFromJSON(json, ref config);
+                try {
+                    SMXHelpers.ImportSettingsFromJSON(json, ref config);
+                } catch (SMXJSON.ParseError e2) {
+                    MessageBox.Show(e2.Message, "Error importing configuration", MessageBoxButton.OK, MessageBoxImage.Warning);
+            break;
+                }
                 SMX.SMX.SetConfig(pad, config);
             }
 
@@ -800,20 +809,20 @@ namespace smx_config
             dialog.FileName = "Select an animated GIF";
             dialog.DefaultExt = ".gif";
             dialog.Filter = "Animated GIF (.gif)|*.gif";
-            bool? result = dialog.ShowDialog();
-            if(result == null || !(bool)result)
-                return;
+            bool result = dialog.ShowDialog().GetValueOrDefault(false);
+            if (!result)
+        return;
 
-            byte[] buf = Helpers.ReadBinaryFile(dialog.FileName);
+            byte[] buf = System.IO.File.ReadAllBytes(dialog.FileName);
             SMX.SMX.LightsType type = pressed ? SMX.SMX.LightsType.LightsType_Pressed : SMX.SMX.LightsType.LightsType_Released;
 
-            foreach(Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
+            foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
             {
                 int pad = activePad.Item1;
 
                 // Load the animation.
                 string error;
-                if(!SMX.SMX.LightsAnimation_Load(buf, pad, type, out error))
+                if (!SMX.SMX.LightsAnimation_Load(buf, pad, type, out error))
                 {
                     // Any errors here are problems with the GIF, so there's no point trying
                     // to load it for the second pad if the first returns an error.  Just show the
@@ -821,7 +830,7 @@ namespace smx_config
                     MessageBox.Show(error, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
 
                     // Return without saving to settings on error.
-                    return;
+        return;
                 }
 
                 // Save the GIF to disk so we can load it quickly later.
@@ -833,15 +842,15 @@ namespace smx_config
 
             // For firmwares that support it, upload the animation to the pad now.  Otherwise,
             // we'll run the animation directly.
-            foreach(Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
+            foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
             {
                 int pad = activePad.Item1;
 
                 SMX.SMXConfig config;
-                if(!SMX.SMX.GetConfig(pad, out config))
-                    continue;
+                if (!SMX.SMX.GetConfig(pad, out config))
+            continue;
 
-                if(config.IsNewGen())
+                if (config.IsNewGen())
                     UploadLatestGIF();
 
                 break;
@@ -862,7 +871,7 @@ namespace smx_config
             // we can start both of these simultaneously, and they'll be sent in
             // parallel.
             int total = 0;
-            foreach(Tuple<int,SMX.SMXConfig> activePad in ActivePad.ActivePads())
+            foreach (Tuple<int,SMX.SMXConfig> activePad in ActivePad.ActivePads())
             {
                 int pad = activePad.Item1;
                 SMX.SMX.LightsUpload_BeginUpload(pad, delegate(int progress) {
@@ -872,7 +881,7 @@ namespace smx_config
                         CurrentProgress[pad] = progress;
 
                         dialog.SetProgress(CurrentProgress[0] + CurrentProgress[1]);
-                        if(progress == 100)
+                        if (progress == 100)
                             dialog.Close();
                     });
                 });
@@ -893,7 +902,7 @@ namespace smx_config
         {
             App application = (App) Application.Current;
 
-            if(msg == WM_SYSCOMMAND && ((int)wparam & 0xFFF0) == SC_MINIMIZE)
+            if (msg == WM_SYSCOMMAND && ((int)wparam & 0xFFF0) == SC_MINIMIZE)
             {
                 // Cancel minimize, and call MinimizeToTray instead.
                 handled = true;
@@ -919,7 +928,7 @@ namespace smx_config
                 for (int pad = 0; pad < 2; ++pad)
                     SMX.SMX.SetSensorTestMode(pad, SMX.SMX.SensorTestMode.CalibratedValues, "MainWindow");
             }
-            else if(Main.SelectedItem != DiagnosticTab)
+            else if (Main.SelectedItem != DiagnosticTab)
             {
                 for (int pad = 0; pad < 2; ++pad)
                     SMX.SMX.SetSensorTestMode(pad, SMX.SMX.SensorTestMode.Off, "MainWindow");

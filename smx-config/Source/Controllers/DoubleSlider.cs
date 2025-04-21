@@ -72,6 +72,13 @@ namespace smx_config
             return value;
         }
 
+        private static void SliderValueChangedCallback(DependencyObject target, DependencyPropertyChangedEventArgs args)
+        {
+            DoubleSlider slider = target as DoubleSlider;
+            if (slider.ValueChanged != null)
+                slider.ValueChanged.Invoke(slider);
+        }
+
         public static readonly DependencyProperty LowerValueProperty = DependencyProperty.Register("LowerValue",
             typeof(double), typeof(DoubleSlider),
             new FrameworkPropertyMetadata(10.0, FrameworkPropertyMetadataOptions.AffectsArrange, null, LowerValueCoerceValueCallback));

@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Security;
+using System.Text;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Resources;
@@ -30,8 +32,8 @@ namespace smx_config
         public static IEnumerable<Tuple<int, SMX.SMXConfig>> ActivePads()
         {
             // In case we're called in design mode, just return an empty list.
-            if(CurrentSMXDevice.singleton == null)
-                return new List<Tuple<int, SMX.SMXConfig>>();
+            if (CurrentSMXDevice.singleton == null)
+        return new List<Tuple<int, SMX.SMXConfig>>();
 
             return ActivePads(CurrentSMXDevice.singleton.GetState());
         }
@@ -43,11 +45,11 @@ namespace smx_config
             bool Pad2Connected = args.controller[1].info.connected;
 
             // If both pads are connected and a single pad is selected, ignore the deselected pad.
-            if(Pad1Connected && Pad2Connected)
+            if (Pad1Connected && Pad2Connected)
             {
-                if(selectedPad == SelectedPad.P1)
+                if (selectedPad == SelectedPad.P1)
                     Pad2Connected = false;
-                if(selectedPad == SelectedPad.P2)
+                if (selectedPad == SelectedPad.P2)
                     Pad1Connected = false;
             }
 
@@ -61,8 +63,8 @@ namespace smx_config
         // UI we just want one of them to set the UI to.  For convenience, return the first one.
         public static SMX.SMXConfig GetFirstActivePadConfig(LoadFromConfigDelegateArgs args)
         {
-            foreach(Tuple<int,SMX.SMXConfig> activePad in ActivePads(args))
-                return activePad.Item2;
+            foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePads(args))
+        return activePad.Item2;
 
             // There aren't any pads connected.  Just return a dummy config, since the UI
             // isn't visible.
@@ -80,10 +82,10 @@ namespace smx_config
         // Return true if arg is in the commandline.
         public static bool HasCommandlineArgument(string arg)
         {
-            foreach(string s in Environment.GetCommandLineArgs())
+            foreach (string s in Environment.GetCommandLineArgs())
             {
-                if(s == arg)
-                    return true;
+                if (s == arg)
+        return true;
             }
             return false;
         }
@@ -104,8 +106,8 @@ namespace smx_config
         public static string GetLastWin32ErrorString()
         {
             int error = Marshal.GetLastWin32Error();
-            if(error == 0)
-                return "";
+            if (error == 0)
+        return "";
             return new System.ComponentModel.Win32Exception(error).Message;
         }
 
@@ -114,6 +116,7 @@ namespace smx_config
         {
             using (var ms = new MemoryStream())
             {
+                // TODO: pucgenie: https://github.com/dotnet/designs/blob/main/accepted/2020/better-obsoletion/binaryformatter-obsoletion.md
                 var formatter = new BinaryFormatter();
                 formatter.Serialize(ms, obj);
                 ms.Position = 0;
@@ -125,10 +128,10 @@ namespace smx_config
         // Work around Enumerable.SequenceEqual not checking if the arrays are null.
         public static bool SequenceEqual<TSource>(this IEnumerable<TSource> first, IEnumerable<TSource> second)
         {
-            if(first == second)
-                return true;
-            if(first == null || second == null)
-                return false;
+            if (first == second)
+        return true;
+            if (first == null || second == null)
+        return false;
             return Enumerable.SequenceEqual(first, second);
         }
 
@@ -145,22 +148,22 @@ namespace smx_config
         {
             // WPF's Color.ToString() returns #AARRGGBB, which is just wrong.  Alpha is always
             // last in HTML color codes.  We don't need alpha, so just strip it off.
-            return "#" + color.ToString().Substring(3);
+            return $"#{color.ToString().Substring(3)}";
         }
 
         // Parse #RRGGBB and return a Color, or white if the string isn't in the correct format.
         public static Color ParseColorString(string s)
         {
             // We only expect "#RRGGBB".
-            if(s.Length != 7 || !s.StartsWith("#"))
-                return Color.FromRgb(255,255,255);
+            if (s.Length != 7 || !s.StartsWith("#"))
+        return Color.FromRgb(255,255,255);
 
             try {
-                return (Color) ColorConverter.ConvertFromString(s);
+        return (Color) ColorConverter.ConvertFromString(s);
             }
             catch(System.FormatException)
             {
-                return Color.FromRgb(255,255,255);
+        return Color.FromRgb(255,255,255);
             }
         }
 
@@ -174,15 +177,15 @@ namespace smx_config
         }
         static public Byte UnscaleColor(Byte c)
         {
-            Byte result = (Byte) Math.Round(Math.Min(255, c / LightsScaleFactor));
+            byte result = (byte) Math.Round(Math.Min(255, c / LightsScaleFactor));
 
             // The color values we output are quantized, since we're scaling an 8-bit value.
             // This doesn't have any real effect, but it causes #FFFFFF in the settings export
             // file to be written out as #FDFDFD (which has the same value in hardware).  Just
             // so the common value of white is clean, snap these values to 0xFF.  The end result
             // will be the same.
-            if(result >= 0xFD)
-                return 0xFF;
+            if (result >= 0xFD)
+        return 0xFF;
             return result;
         }
 
@@ -212,14 +215,15 @@ namespace smx_config
             double X = C * (1 - Math.Abs((H % 2) - 1));
 
             Color ret;
+            // pucgenie: Why round after floor?
             switch( (int) Math.Round(Math.Floor(H)) )
             {
+            default: ret = ColorFromFloatRGB(C, 0, X); break;
             case 0:  ret = ColorFromFloatRGB(C, X, 0); break;
             case 1:  ret = ColorFromFloatRGB(X, C, 0); break;
             case 2:  ret = ColorFromFloatRGB(0, C, X); break;
             case 3:  ret = ColorFromFloatRGB(0, X, C); break;
             case 4:  ret = ColorFromFloatRGB(X, 0, C); break;
-            default: ret = ColorFromFloatRGB(C, 0, X); break;
             }
 
             ret -= ColorFromFloatRGB(C-V, C-V, C-V);
@@ -257,55 +261,18 @@ namespace smx_config
         }
 
         // Return our settings directory, creating it if it doesn't exist.
-        public static string GetSettingsDirectory()
+        public static DirectoryInfo GetSettingsDirectory()
         {
-            string result = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/StepManiaX/";
-            System.IO.Directory.CreateDirectory(result);
+            var result = new DirectoryInfo($"{Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}/StepManiaX/");
+            result.Create();
             return result;
-        }
-
-        public static byte[] ReadFileFromSettings(string filename)
-        {
-            string outputFilename = GetSettingsDirectory() + filename;
-            try {
-                return System.IO.File.ReadAllBytes(outputFilename);
-            } catch {
-                // If the file doesn't exist or can't be read for some other reason, just
-                // return null.
-                return null;
-            }
         }
 
         public static void SaveFileToSettings(string filename, byte[] data)
         {
-            string outputFilename = GetSettingsDirectory() + filename;
-            string directory = System.IO.Path.GetDirectoryName(outputFilename);
-            System.IO.Directory.CreateDirectory(directory);
-            System.IO.File.WriteAllBytes(outputFilename, data);
-        }
-
-        // Read path.  If an error is encountered, return "".
-        public static string ReadFile(string path)
-        {
-            try {
-                return System.IO.File.ReadAllText(path);
-            }
-            catch(System.IO.IOException)
-            {
-                return "";
-            }
-        }
-
-        // Read path.  If an error is encountered, return null.
-        public static byte[] ReadBinaryFile(string path)
-        {
-            try {
-                return System.IO.File.ReadAllBytes(path);
-            }
-            catch(System.IO.IOException)
-            {
-                return null;
-            }
+            var outputFile = new System.IO.FileInfo($"{GetSettingsDirectory()}{filename}");
+            outputFile.Directory.Create();
+            System.IO.File.WriteAllBytes(outputFile.FullName, data);
         }
 
         public static Dictionary<SMX.SMX.LightsType, string> LightsTypeNames = new Dictionary<SMX.SMX.LightsType, string>()
@@ -317,18 +284,17 @@ namespace smx_config
         // Load any saved animations from disk.
         public static void LoadSavedPanelAnimations()
         {
-            for(int pad = 0; pad < 2; ++pad)
+            for (int pad = 0; pad < 2; ++pad)
             {
-                foreach(var it in LightsTypeNames)
+                foreach (var it in LightsTypeNames)
                     LoadSavedAnimationType(pad, it.Key);
             }
         }
 
         public static void SaveAnimationToDisk(int pad, SMX.SMX.LightsType type, byte[] data)
         {
-            string filename = LightsTypeNames[type] + ".gif";
-            string path = "Animations/Pad" + (pad+1) + "/" + filename;
-            Helpers.SaveFileToSettings(path, data);
+            // TODO: pucgenie: fix relative path?
+            Helpers.SaveFileToSettings($"Animations/Pad{pad+1}/{LightsTypeNames[type]}.gif", data);
         }
 
         // Read a saved PanelAnimation.
@@ -337,18 +303,27 @@ namespace smx_config
         // our default animation.
         private static byte[] ReadSavedAnimationType(int pad, SMX.SMX.LightsType type)
         {
-            string filename = LightsTypeNames[type] + ".gif";
-            string path = "Animations/Pad" + (pad+1) + "/" + filename;
-            byte[] gif = Helpers.ReadFileFromSettings(path);
-            if(gif == null)
+            var filename = $"{LightsTypeNames[type]}.gif";
+            var customGifFile = new FileInfo($"{GetSettingsDirectory()}Animations/Pad{pad+1}/{filename}");
+            if (!customGifFile.Exists)
             {
                 // If the user has never loaded a file, load our default.
-                Uri url = new Uri("pack://application:,,,/Resources/" + filename);
-                StreamResourceInfo info = Application.GetResourceStream(url);
-                gif = new byte[info.Stream.Length];
+                StreamResourceInfo info = Application.GetResourceStream(
+                        new Uri($"pack://application:,,,/Resources/{filename}")
+                    );
+                byte[] gif = new byte[info.Stream.Length];
                 info.Stream.Read(gif, 0, gif.Length);
+        return gif;
+            } else {
+                // pucgenie: If this file can't be read, this would probably not be the user's only problem...
+                try {
+        return System.IO.File.ReadAllBytes(customGifFile.FullName);
+                } catch (Exception e) {
+                    // pucgenie: but let's give him something other than a "general error".
+                    Console.Error.WriteLine($"Unexpected error reading file: {customGifFile}");
+                    throw e;
+                }
             }
-            return gif;
         }
 
         // Load a PanelAnimation from disk.
@@ -363,31 +338,29 @@ namespace smx_config
         // breaks lots of software, including WPF's settings class.  This is a race condition,
         // so try to work around this by trying repeatedly.  There's not much else we can do about
         // it other than asking users to use a better antivirus.
-        public static void SaveApplicationSettings()
+        public static bool SaveApplicationSettings()
         {
-            for(int i = 0; i < 10; ++i)
+            for (var i = 0; i < 10; ++i)
             {
                 try {
                     Properties.Settings.Default.Save();
-                    return;
-                } catch(IOException e)
+        return true;
+                } catch (IOException e)
                 {
-                    Console.WriteLine("Error writing settings.  Trying again: " + e);
+                    Console.Error.WriteLine("Error writing settings.  Trying again: " + e);
                 }
             }
-
-            MessageBox.Show("Settings couldn't be saved.\n\nThis is usually caused by faulty antivirus software.",
-                "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
         }
 
         // Create a .lnk.
-        public static void CreateShortcut(string outputFile, string targetPath, string arguments)
+        public static void CreateShortcut(FileInfo outputFile, FileInfo targetPath, string arguments)
         {
             Type shellType = Type.GetTypeFromProgID("WScript.Shell");
             dynamic shell = Activator.CreateInstance(shellType);
-            dynamic shortcut = shell.CreateShortcut(outputFile);
+            dynamic shortcut = shell.CreateShortcut(outputFile.FullName);
 
-            shortcut.TargetPath = targetPath;
+            shortcut.TargetPath = targetPath.FullName;
             shortcut.Arguments = arguments;
             shortcut.WindowStyle = 0;
             shortcut.Save();
@@ -461,7 +434,11 @@ namespace smx_config
         // export to JSON.
         static public void SetCustomSensorsJSON(List<object> panelAndSensors)
         {
-            Properties.Settings.Default.CustomSensors = SerializeJSON.Serialize(panelAndSensors);
+            StringBuilder sb = new StringBuilder();
+            SerializeJSON.Serialize(panelAndSensors, sb, 0);
+            sb.Append('\n');
+            Properties.Settings.Default.CustomSensors = sb.ToString();
+            sb.Length = 0;
             Helpers.SaveApplicationSettings();
 
             // Clear the cache.  Set it to null instead of assigning panelAndSensors to it to force
@@ -475,29 +452,27 @@ namespace smx_config
         {
 //            Properties.Settings.Default.CustomSensors = "[[0,0], [1,0]]";
             // This is only ever changed with calls to SetCustomSensors.
-            if(cachedCustomSensors != null)
-                return Helpers.DeepClone(cachedCustomSensors);
+            if (cachedCustomSensors != null)
+        return Helpers.DeepClone(cachedCustomSensors);
 
-            List<PanelAndSensor> result = new List<PanelAndSensor>();
-            if(Properties.Settings.Default.CustomSensors == "")
-                return result;
+            var result = new List<PanelAndSensor>();
+            if (Properties.Settings.Default.CustomSensors == "")
+        return result;
 
             try {
                 // This is a list of [panel,sensor] arrays:
                 // [[0,0], [0,1], [1,0]]
-                List<object> sensors = GetCustomSensorsJSON();
-                foreach(object panelAndSensorObj in sensors)
+                foreach (List<object> panelAndSensor in GetCustomSensorsJSON())
                 {
-                    List<object> panelAndSensor = (List<object>) panelAndSensorObj;
                     int panel = panelAndSensor.Get(0, -1);
                     int sensor = panelAndSensor.Get(1, -1);
-                    if(panel == -1 || sensor == -1)
-                        continue;
+                    if (panel == -1 || sensor == -1)
+                continue;
 
                     result.Add(new PanelAndSensor(panel, sensor));
                 }
-            } catch(ParseError) {
-                return result;
+            } catch (ParseError) {
+        return result;
             }
 
             cachedCustomSensors = result;
@@ -505,14 +480,14 @@ namespace smx_config
             return Helpers.DeepClone(cachedCustomSensors);
         }
 
-        static public List<object> GetCustomSensorsJSON()
+        static public List<List<object>> GetCustomSensorsJSON()
         {
             try {
-                return SMXJSON.ParseJSON.Parse<List<object>>(Properties.Settings.Default.CustomSensors);
-            } catch(ParseError) {
+        return SMXJSON.ParseJSON.Parse<List<List<object>>>(Properties.Settings.Default.CustomSensors);
+            } catch (ParseError) {
                 // CustomSensors is empty by default.  We could test if it's empty, but as a more general
                 // safety, just catch any JSON errors in case something invalid is saved to it.
-                return new List<object>();
+        return new List<List<object>>();
             }
         }
 
@@ -554,9 +529,9 @@ namespace smx_config
         // disabled by checkboxes.  This is used for the UI.
         static public List<PanelAndSensor> GetControlledSensorsForSliderType(string Type, bool hasAllPanels, bool includeOverridden)
         {
-            List<PanelAndSensor> result = GetControlledSensorsForSliderTypeInternal(Type, hasAllPanels, includeOverridden);
+            var result = GetControlledSensorsForSliderTypeInternal(Type, hasAllPanels, includeOverridden);
 
-            if(!includeOverridden)
+            if (!includeOverridden)
             {
                 // inner-sensors, outer-sensors and custom thresholds overlap each other and the standard
                 // sliders.  inner-sensors and outer-sensors take over the equivalent sensors in the standard
@@ -564,12 +539,12 @@ namespace smx_config
                 //
                 // We always pass false to includeOverridden here, since we need to know the real state of the
                 // sliders we're removing.
-                if(Type == "inner-sensors" || Type == "outer-sensors")
+                if (Type == "inner-sensors" || Type == "outer-sensors")
                 {
                     // Remove any sensors controlled by the custom threshold.
                     RemoveFromSensorList(result, GetControlledSensorsForSliderTypeInternal("custom-sensors", hasAllPanels, false));
                 }
-                else if(Type != "custom-sensors")
+                else if (Type != "custom-sensors")
                 {
                     // This is a regular slider.  Remove any sensors controlled by inner-sensors, outer-sensors
                     // or custom-sensors.
@@ -592,48 +567,47 @@ namespace smx_config
         {
             // inner-sensors and outer-sensors do nothing if their checkbox is disabled.  We do this here because we
             // need to skip this for the RemoveFromSensorList logic above.
-            if(!includeOverridden)
-            {
-                if(Type == "inner-sensors" && !Properties.Settings.Default.UseInnerSensorThresholds)
-                    return new List<PanelAndSensor>();
-                if(Type == "outer-sensors" && !Properties.Settings.Default.UseOuterSensorThresholds)
-                    return new List<PanelAndSensor>();
-            }
+            if ((!includeOverridden)
+                && (
+                    (Type == "inner-sensors" && !Properties.Settings.Default.UseInnerSensorThresholds)
+                    || (Type == "outer-sensors" && !Properties.Settings.Default.UseOuterSensorThresholds)
+                )
+            )
+        return new List<PanelAndSensor>();
 
             // Special sliders:
-            if(Type == "custom-sensors") return GetCustomSensors();
-            if(Type == "inner-sensors") return GetInnerSensors();
-            if(Type == "outer-sensors") return GetOuterSensors();
+            if (Type == "custom-sensors") return GetCustomSensors();
+            if (Type == "inner-sensors") return GetInnerSensors();
+            if (Type == "outer-sensors") return GetOuterSensors();
 
-            List<PanelAndSensor> result = new List<PanelAndSensor>();
+            var result = new List<PanelAndSensor>();
 
             // Check if this slider is shown in this mode.
-            if(hasAllPanels)
+            if (hasAllPanels)
             {
                 // Hide the combo sliders in advanced mode.
-                if(Type == "cardinal" || Type == "corner")
-                    return result;
+                if (Type == "cardinal" || Type == "corner")
+        return result;
             }
-
-            if(!hasAllPanels)
+            else // pucgenie: Just left here for understanding.
             {
                 // Only these sliders are shown in normal mode.
-                if(Type != "up" && Type != "center" && Type != "cardinal" && Type != "corner")
-                    return result;
+                if (Type != "up" && Type != "center" && Type != "cardinal" && Type != "corner")
+        return result;
             }
 
             // If advanced mode is disabled, save to all panels this slider affects.  The down arrow controls
             // all four cardinal panels.  (If advanced mode is enabled we'll never be a different cardinal
             // direction, since those widgets won't exist.)  If it's disabled, just write to our own panel.
-            List<int> saveToPanels = new List<int>();
+            var saveToPanels = new List<int>();
             int ourPanelIdx = panelNameToIndex[Type];
             saveToPanels.Add(ourPanelIdx);
-            if(!hasAllPanels)
+            if (!hasAllPanels)
                 saveToPanels.AddRange(ConfigPresets.GetPanelsToSyncUnifiedThresholds(ourPanelIdx));
 
-            foreach(int panelIdx in saveToPanels)
+            foreach (int panelIdx in saveToPanels)
             {
-                for(int sensor = 0; sensor < 4; ++sensor)
+                for (int sensor = 0; sensor < 4; ++sensor)
                     result.Add(new PanelAndSensor(panelIdx, sensor));
             }
 
@@ -744,10 +718,9 @@ namespace smx_config
     // Manage launching on startup.
     static class LaunchOnStartup
     {
-        public static string GetLaunchShortcutFilename()
+        public static FileInfo GetLaunchShortcutFilename()
         {
-            string startupFolder = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
-            return startupFolder + "/StepManiaX.lnk";
+            return new FileInfo($"{Environment.GetFolderPath(Environment.SpecialFolder.Startup)}/StepManiaX.lnk");
         }
 
         // Enable or disable launching on startup.
@@ -758,7 +731,7 @@ namespace smx_config
             }
 
             set {
-                if(Properties.Settings.Default.LaunchOnStartup == value)
+                if (Properties.Settings.Default.LaunchOnStartup == value)
                     return;
 
                 // Remember whether we want to be launched on startup.  This is used as a sanity
@@ -766,18 +739,21 @@ namespace smx_config
                 Properties.Settings.Default.LaunchOnStartup = value;
                 Helpers.SaveApplicationSettings();
 
-                string shortcutFilename = GetLaunchShortcutFilename();
-                if(value)
+                var shortcutFile = GetLaunchShortcutFilename();
+                if (value)
                 {
-                    string filename = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
-                    Helpers.CreateShortcut(shortcutFilename, filename, "-s");
+                    Helpers.CreateShortcut(shortcutFile, new System.IO.FileInfo(System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName), "-s");
                 } else {
-
-                    try {
-                        System.IO.File.Delete(shortcutFilename);
-                    } catch {
-                        // If there's an error deleting the shortcut (most likely it doesn't exist),
-                        // don't do anything.
+                    if (shortcutFile.Exists) {
+                        try {
+                            shortcutFile.Delete();
+                        } catch (IOException ioex) {
+                            Console.Error.WriteLine($"Failed to delete shortcut file: {ioex}");
+                        } catch (SecurityException secex) {
+                            Console.Error.WriteLine($"Security error while deleting shortcut file: {secex}");
+                        } catch (UnauthorizedAccessException unauthex) {
+                            Console.Error.WriteLine($"Unauthorized to delete shortcut file: {unauthex}");
+                        }
                     }
                 }
             }
@@ -799,7 +775,7 @@ namespace smx_config
 
             LightsTimer.Tick += delegate(object sender, EventArgs e)
             {
-                if(!LightsTimer.IsEnabled)
+                if (!LightsTimer.IsEnabled)
                     return;
 
                 AutoLightsColorRefreshColor();
@@ -811,7 +787,7 @@ namespace smx_config
             // To show the current color, send a lights command periodically.  If we stop sending
             // this for a while the controller will return to auto-lights, which we won't want to
             // happen until AutoLightsColorEnd is called.
-            if(LightsTimer.IsEnabled)
+            if (LightsTimer.IsEnabled)
                 return;
 
             // Don't wait for an interval to send the first update.
@@ -833,15 +809,15 @@ namespace smx_config
         {
             CommandBuffer cmd = new CommandBuffer();
 
-            for(int pad = 0; pad < 2; ++pad)
+            for (int pad = 0; pad < 2; ++pad)
             {
                 // Use this panel's color.  If a panel isn't connected, we still need to run the
                 // loop below to insert data for the panel.
-                byte[] color = new byte[9*3];
+                var color = new byte[9*3];
                 SMX.SMXConfig config;
-                if(SMX.SMX.GetConfig(pad, out config))
+                if (SMX.SMX.GetConfig(pad, out config))
                     color = config.stepColor;
-                for( int iPanel = 0; iPanel < 9; ++iPanel )
+                for ( int iPanel = 0; iPanel < 9; ++iPanel )
                 {
                     for( int i = 0; i < 25; ++i )
                     {
@@ -862,53 +838,48 @@ namespace smx_config
 
     static class SMXHelpers
     {
-        // Export configurable values in SMXConfig to a JSON string.
-        public static string ExportSettingsToJSON(SMX.SMXConfig config)
+        /// <summary>
+        /// Export configurable values in SMXConfig to a JSON string.
+        /// TODO: pucgenie: Serialize onto output stream/buffer, not to String.
+        /// </summary>
+        /// <param name="config"></param>
+        /// <returns></returns>
+        public static void ExportSettingsToJSON(SMX.SMXConfig config, StringBuilder result)
         {
             // The user only uses one of low or high thresholds.  Only export the
             // settings the user is actually using.
-            Dictionary<string, Object> dict = new Dictionary<string, Object>();
-            if(config.isFSR())
+            var dict = new Dictionary<string, Object>();
+            if (config.isFSR())
             {
-                List<int> fsrLowThresholds = new List<int>();
-                for(int panel = 0; panel < 9; ++panel)
-                    fsrLowThresholds.Add(config.panelSettings[panel].fsrLowThreshold[0]);
-                dict.Add("fsrLowThresholds", fsrLowThresholds);
-
-                List<int> fsrHighThresholds = new List<int>();
-                for(int panel = 0; panel < 9; ++panel)
-                    fsrHighThresholds.Add(config.panelSettings[panel].fsrHighThreshold[0]);
-                dict.Add("fsrHighThresholds", fsrHighThresholds);
+                // pucgenie: I can't test it myself - no FSR at home
+                dict.Add("fsrLowThresholds", (from panel in config.panelSettings select panel.fsrLowThreshold[0]).ToList());
+                dict.Add("fsrHighThresholds", (from panel in config.panelSettings select panel.fsrHighThreshold[0]).ToList());
             }
             else
             {
-                List<int> panelLowThresholds = new List<int>();
-                for(int panel = 0; panel < 9; ++panel)
-                    panelLowThresholds.Add(config.panelSettings[panel].loadCellLowThreshold);
-                dict.Add("panelLowThresholds", panelLowThresholds);
-
-                List<int> panelHighThresholds = new List<int>();
-                for(int panel = 0; panel < 9; ++panel)
-                    panelHighThresholds.Add(config.panelSettings[panel].loadCellHighThreshold);
-                dict.Add("panelHighThresholds", panelHighThresholds);
+                dict.Add("panelLowThresholds", (from panel in config.panelSettings select panel.loadCellLowThreshold).ToList());
+                dict.Add("panelHighThresholds", (from panel in config.panelSettings select panel.loadCellHighThreshold).ToList());
             }
 
             // Store the enabled panel mask as a simple list of which panels are selected.
-            bool[] enabledPanels = config.GetEnabledPanels();
-            List<int> enabledPanelList = new List<int>();
-            for(int panel = 0; panel < 9; ++panel)
+            var enabledPanels = config.GetEnabledPanels();
+            var enabledPanelList = new List<int>();
+            for (int panel = 0; panel < 9; ++panel)
             {
-                if(enabledPanels[panel])
+                if (enabledPanels[panel])
                     enabledPanelList.Add(panel);
             }
             dict.Add("enabledPanels", enabledPanelList);
 
             // Store panel colors.
-            List<string> panelColors = new List<string>();
-            for(int PanelIndex = 0; PanelIndex < 9; ++PanelIndex)
+            var panelColors = new List<string>();
+            for (int PanelIndex = 0; PanelIndex < 9; ++PanelIndex)
             {
                 // Scale colors from the hardware value back to the 0-255 value we use in the UI.
-                Color color = Color.FromRgb(config.stepColor[PanelIndex*3+0], config.stepColor[PanelIndex*3+1], config.stepColor[PanelIndex*3+2]);
+                Color color = Color.FromRgb(
+                    config.stepColor[PanelIndex*3+0],
+                    config.stepColor[PanelIndex*3+1],
+                    config.stepColor[PanelIndex*3+2]);
                 color = Helpers.UnscaleColor(color);
                 panelColors.Add(Helpers.ColorToString(color));
             }
@@ -918,20 +889,14 @@ namespace smx_config
             dict.Add("useInnerSensorThresholds", Properties.Settings.Default.UseInnerSensorThresholds);
             dict.Add("customSensors", ThresholdSettings.GetCustomSensorsJSON());
 
-            return SMXJSON.SerializeJSON.Serialize(dict);
+            SMXJSON.SerializeJSON.Serialize(dict, result, 0);
+            result.Append('\n');
         }
 
         // Import a saved JSON configuration to an SMXConfig.
         public static void ImportSettingsFromJSON(string json, ref SMX.SMXConfig config)
         {
-            Dictionary<string, Object> dict;
-            try {
-                dict = SMXJSON.ParseJSON.Parse<Dictionary<string, Object>>(json);
-            } catch(ParseError e) {
-                MessageBox.Show(e.Message, "Error importing configuration", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
+            var dict = SMXJSON.ParseJSON.Parse<Dictionary<string, Object>>(json);
             // Read the thresholds.  If any values are missing, we'll leave the value in config alone.
             if(config.isFSR())
             {
@@ -990,8 +955,8 @@ namespace smx_config
 
             Properties.Settings.Default.UseOuterSensorThresholds = dict.Get<bool>("useOuterSensorThresholds", false);
             Properties.Settings.Default.UseInnerSensorThresholds = dict.Get<bool>("useInnerSensorThresholds", false);
-            List<object> customSensors = dict.Get<List<object>>("customSensors", null);
-            if(customSensors != null)
+            var customSensors = dict.Get<List<object>>("customSensors", null);
+            if (customSensors != null)
                 ThresholdSettings.SetCustomSensorsJSON(customSensors);
         }
 

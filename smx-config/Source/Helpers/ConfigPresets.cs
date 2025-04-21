@@ -18,15 +18,15 @@ namespace smx_config
             // each preset regardless of what happens to be in the unused per-panel threshold fields.
             // If we don't do this, we won't recognize that the default preset is active because unused
             // fields won't match up.
-            if(config.configVersion == 0xFF || config.configVersion < 2)
+            if (config.configVersion == 0xFF || config.configVersion < 2)
                 SyncUnifiedThresholds(ref config);
 
-            foreach(string Preset in Presets)
+            foreach (string Preset in Presets)
             {
                 SMX.SMXConfig PresetConfig = SMX.SMXConfig.Create();
                 SetPreset(Preset, ref PresetConfig);
                 if(SamePreset(config, PresetConfig))
-                    return Preset;
+        return Preset;
             }
             return "";
         }
@@ -34,17 +34,17 @@ namespace smx_config
         // Return true if the config matches, only comparing values that we set in presets.
         static private bool SamePreset(SMX.SMXConfig config1, SMX.SMXConfig config2)
         {
-            for(int panel = 0; panel < 9; ++panel)
+            for (int panel = 0; panel < 9; ++panel)
             {
-                if(config1.panelSettings[panel].loadCellLowThreshold != config2.panelSettings[panel].loadCellLowThreshold ||
+                if (config1.panelSettings[panel].loadCellLowThreshold != config2.panelSettings[panel].loadCellLowThreshold ||
                     config1.panelSettings[panel].loadCellHighThreshold != config2.panelSettings[panel].loadCellHighThreshold)
                         return false;
 
-                for(int sensor = 0; sensor < 4; ++sensor)
+                for (int sensor = 0; sensor < 4; ++sensor)
                 {
-                    if(config1.panelSettings[panel].fsrLowThreshold[sensor] != config2.panelSettings[panel].fsrLowThreshold[sensor] ||
+                    if (config1.panelSettings[panel].fsrLowThreshold[sensor] != config2.panelSettings[panel].fsrLowThreshold[sensor] ||
                         config1.panelSettings[panel].fsrHighThreshold[sensor] != config2.panelSettings[panel].fsrHighThreshold[sensor])
-                        return false;
+        return false;
                 }
             }
 
