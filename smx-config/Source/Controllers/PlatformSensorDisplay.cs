@@ -1,11 +1,5 @@
-﻿using System;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using System.Windows.Media;
-using System.Windows.Input;
-using System.Windows.Media.Imaging;
-using System.Windows.Threading;
 using System.Collections.Generic;
 
 namespace smx_config
@@ -35,7 +29,7 @@ namespace smx_config
 
             panelIconWithSensorsSensor = new PanelIconWithSensorsSensor[4];
             for (int sensor = 0; sensor < 4; ++sensor)
-                panelIconWithSensorsSensor[sensor] = GetTemplateChild("Sensor" + sensor) as PanelIconWithSensorsSensor;
+                panelIconWithSensorsSensor[sensor] = GetTemplateChild($"Sensor{sensor}") as PanelIconWithSensorsSensor;
         }
 
 
@@ -54,7 +48,7 @@ namespace smx_config
 
             panelIconWithSensors = new PanelIconWithSensors[9];
             for (int panel = 0; panel < 9; ++panel)
-                panelIconWithSensors[panel] = GetTemplateChild("Panel" + panel) as PanelIconWithSensors;
+                panelIconWithSensors[panel] = GetTemplateChild($"Panel{panel}") as PanelIconWithSensors;
         }
 
         private PanelIconWithSensorsSensor GetSensor(int panel, int sensor)
@@ -91,23 +85,18 @@ namespace smx_config
             activePanel = -1;
             activeSensor = -1;
             short sensorValue = short.MinValue;
-            for (int panel = 0; panel < 9; ++panel)
-            {
-                for (int sensor = 0; sensor < 4; ++sensor)
-                {
-                    if (GetSensor(panel, sensor).Highlight == 2)
-                    {
-                        if (controllerData.test_data.HasSensorValid(panel, sensor, checkData:false))
-                        {
-                            int sensorIndex = (panel * 4) + sensor;
-                            short sensorValueComp = controllerData.test_data.sensorLevel[sensorIndex];
-                            if (sensorValueComp >= sensorValue)
-                            {
-                                activePanel = panel;
-                                activeSensor = sensor;
-                                sensorValue = sensorValueComp;
-                            }
-                        }
+            for (int panel = 0; panel < 9; ++panel) {
+                for (int sensor = 0; sensor < 4; ++sensor) {
+                    if (GetSensor(panel, sensor).Highlight != 2
+                        || !controllerData.test_data.HasSensorValid(panel, sensor, checkData:false)
+                    )
+                continue;
+                    int sensorIndex = (panel * 4) + sensor;
+                    short sensorValueComp = controllerData.test_data.sensorLevel[sensorIndex];
+                    if (sensorValueComp >= sensorValue) {
+                        activePanel = panel;
+                        activeSensor = sensor;
+                        sensorValue = sensorValueComp;
                     }
                 }
             }
