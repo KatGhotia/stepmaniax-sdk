@@ -12,6 +12,13 @@
         Height="700" Width="525" ResizeMode="CanMinimize"
         UseLayoutRounding="True">
     <Window.Resources>
+        <ObjectDataProvider MethodName="GetValues"
+            ObjectType="{x:Type clr:Enum}"
+            x:Key="DiagnosticModeEnumValues">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="SMX.SMX.SensorTestMode" />
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
         <clr:String x:Key="HighPresetDescription" xml:space="preserve">Lighter steps will activate the arrows.
 Use if small children are having difficulty pressing the arrows.</clr:String>
         <clr:String x:Key="NormalPresetDescription" xml:space="preserve">This is the recommended setting.</clr:String>
@@ -661,12 +668,9 @@ Use if the platform is too sensitive.</clr:String>
                                 <DockPanel x:Name="SensorBarPanel" HorizontalAlignment="Center">
                                     <ComboBox
                                         x:Name="DiagnosticMode" DockPanel.Dock="Top"
+                                        ItemsSource="{Binding Source={StaticResource DiagnosticModeEnumValues}}"
                                         Margin="0,0,0,5"
-                                        HorizontalAlignment="Left" SelectedIndex="0" Width="120">
-                                        <ListBoxItem Content="Calibrated values"/>
-                                        <ListBoxItem Content="Raw values"/>
-                                        <ListBoxItem Content="Noise"/>
-                                        <ListBoxItem Content="Tare"/>
+                                        HorizontalAlignment="Left" SelectedIndex="1" Width="120">
                                     </ComboBox>
 
                                     <StackPanel DockPanel.Dock="Left" Orientation="Vertical">
