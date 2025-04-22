@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 
 // All C# JSON implementations are either pretty awful or incredibly bloated, so we
@@ -110,10 +111,7 @@ namespace SMXJSON
         // Serialize a boolean.
         static private void SerializeObject(bool value, StringBuilder output)
         {
-            if(value)
-                output.Append("true");
-            else
-                output.Append("false");
+            output.Append(value ? "true" : "false");
         }
 
         // Serialize a string.
@@ -121,9 +119,9 @@ namespace SMXJSON
         {
             output.Append('"');
 
-            foreach(char c in str)
+            foreach (char c in str)
             {
-                switch(c)
+                switch (c)
                 {
                 case '"': output.Append("\\\""); break;
                 case '\\': output.Append("\\\\"); break;
@@ -147,9 +145,10 @@ namespace SMXJSON
             output.Append("[\n");
             bool first = true;
             indent += 1;
-            foreach(T element in array)
+            foreach (T element in array)
             {
-                if(first)
+                // pucgenie: I dislike n-1 separators for n objects very much.
+                if (first)
                     first = false;
                 else
                     output.Append(",\n");
@@ -171,17 +170,16 @@ namespace SMXJSON
 
             indent += 1;
             bool first = true;
-            foreach(KeyValuePair<string,T> element in dict)
+            foreach (KeyValuePair<string,T> element in dict)
             {
-                if(first)
+                if (first)
                     first = false;
                 else
                     output.Append(",\n");
 
                 AddIndent(output, indent);
                 SerializeObject(element.Key, output);
-                output.Append(':');
-                output.Append(' ');
+                output.Append(": ");
                 Serialize(element.Value, output, indent);
             }
             output.Append('\n');
@@ -194,11 +192,18 @@ namespace SMXJSON
         // Serialize an object based on its type.
         static public void Serialize(object obj, StringBuilder output, int indent)
         {
-            if (obj == null) { output.Append("null"); return; }
+            if (obj == null) {
+                output.Append("null");
+        return;
+            }
 
-            if (typeof(Int32).IsInstanceOfType(obj)) { output.Append(obj.ToString()); return; }
-            if (typeof(float).IsInstanceOfType(obj)) { output.Append(obj.ToString()); return; }
-            if (typeof(Double).IsInstanceOfType(obj)) { output.Append(obj.ToString()); return; }
+            if (typeof(Int32).IsInstanceOfType(obj)
+                || typeof(float).IsInstanceOfType(obj)
+                || typeof(Double).IsInstanceOfType(obj)
+                ) {
+                output.Append(obj.ToString());
+        return;
+            }
 
             if (typeof(Boolean).IsInstanceOfType(obj)) { SerializeObject((Boolean) obj, output); return; }
             if (typeof(string).IsInstanceOfType(obj)) { SerializeObject((string) obj, output); return; }
@@ -210,12 +215,30 @@ namespace SMXJSON
             if (obj.GetType().GetGenericTypeDefinition().IsAssignableFrom(typeof(List<>)))
             {
                 Type valueType = obj.GetType().GetGenericArguments()[0];
-                if (valueType == typeof(object)) { SerializeObject((List<object>)obj, output, indent); return; }
-                if (valueType == typeof(Int32)) { SerializeObject((List<Int32>)obj, output, indent); return; }
-                if (valueType == typeof(float)) { SerializeObject((List<float>)obj, output, indent); return; }
-                if (valueType == typeof(Double)) { SerializeObject((List<Double>)obj, output, indent); return; }
-                if (valueType == typeof(Boolean)) { SerializeObject((List<Boolean>)obj, output, indent); return; }
-                if (valueType == typeof(string)) { SerializeObject((List<string>)obj, output, indent); return; }
+                if (valueType == typeof(object)) {
+                    SerializeObject((List<object>)obj, output, indent);
+        return;
+                }
+                if (valueType == typeof(Int32)) {
+                    SerializeObject((List<Int32>)obj, output, indent);
+        return;
+                }
+                if (valueType == typeof(float)) {
+                    SerializeObject((List<float>)obj, output, indent);
+        return;
+                }
+                if (valueType == typeof(Double)) {
+                    SerializeObject((List<Double>)obj, output, indent);
+        return;
+                }
+                if (valueType == typeof(Boolean)) {
+                    SerializeObject((List<Boolean>)obj, output, indent);
+        return;
+                }
+                if (valueType == typeof(string)) {
+                    SerializeObject((List<string>)obj, output, indent);
+        return;
+                }
             }
 
             if (obj.GetType().GetGenericTypeDefinition().IsAssignableFrom(typeof(Dictionary<,>)))
@@ -224,12 +247,30 @@ namespace SMXJSON
                 if (typeof(string).IsAssignableFrom(keyType))
                 {
                     Type valueType = obj.GetType().GetGenericArguments()[1];
-                    if (valueType == typeof(object)) { SerializeObject((Dictionary<string, object>)obj, output, indent); return; }
-                    if (valueType == typeof(Int32)) { SerializeObject((Dictionary<string, Int32>)obj, output, indent); return; }
-                    if (valueType == typeof(float)) { SerializeObject((Dictionary<string, float>)obj, output, indent); return; }
-                    if (valueType == typeof(Double)) { SerializeObject((Dictionary<string, Double>)obj, output, indent); return; }
-                    if (valueType == typeof(Boolean)) { SerializeObject((Dictionary<string, Boolean>)obj, output, indent); return; }
-                    if (valueType == typeof(string)) { SerializeObject((Dictionary<string, string>)obj, output, indent); return; }
+                    if (valueType == typeof(object)) {
+                        SerializeObject((Dictionary<string, object>)obj, output, indent);
+        return;
+                    }
+                    if (valueType == typeof(Int32)) {
+                        SerializeObject((Dictionary<string, Int32>)obj, output, indent);
+        return;
+                    }
+                    if (valueType == typeof(float)) {
+                        SerializeObject((Dictionary<string, float>)obj, output, indent);
+        return;
+                    }
+                    if (valueType == typeof(Double)) {
+                        SerializeObject((Dictionary<string, Double>)obj, output, indent);
+        return;
+                    }
+                    if (valueType == typeof(Boolean)) {
+                        SerializeObject((Dictionary<string, Boolean>)obj, output, indent);
+        return;
+                    }
+                    if (valueType == typeof(string)) {
+                        SerializeObject((Dictionary<string, string>)obj, output, indent);
+        return;
+                    }
                 }
             }
 
@@ -244,7 +285,7 @@ namespace SMXJSON
             while (true)
             {
                 int c = reader.Peek();
-                switch(c)
+                switch (c)
                 {
                 case ' ':
                 case '\n':
@@ -295,10 +336,10 @@ namespace SMXJSON
         {
             SkipWhitespace(reader);
             int nextCharacter = reader.Peek();
-            switch(nextCharacter)
+            switch (nextCharacter)
             {
             case '"':
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
             ReadJSONString(reader, sb);
         return sb.ToString();
             case '{':
@@ -346,8 +387,8 @@ namespace SMXJSON
         {
             SkipWhitespace(reader);
 
-            if(reader.Read() != character)
-                throw new ParseError(reader, "Expected " + character);
+            if (reader.Read() != character)
+                throw new ParseError(reader, $"Expected {character}");
         }
 
         static private List<Object> ReadJSONArray(StringReader reader)
@@ -369,7 +410,7 @@ namespace SMXJSON
                     if (comma == -1)
         throw new ParseError(reader, "Unexpected EOF reading array");
                     if (comma != ',')
-        throw new ParseError(reader, "Expected ',', got " + comma + " reading array");
+        throw new ParseError(reader, $"Expected ',', got {comma} reading array");
                     SkipWhitespace(reader);
                 }
 
@@ -382,7 +423,7 @@ namespace SMXJSON
 
             var result = new Dictionary<string, Object>();
 
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
             while (true)
             {
                 ReadJSONString(reader, sb);
@@ -393,7 +434,7 @@ namespace SMXJSON
                 result.Add(key, value);
 
                 SkipWhitespace(reader);
-                switch(reader.Read())
+                switch (reader.Read())
                 {
                 case '}':
         return result;
@@ -429,7 +470,7 @@ namespace SMXJSON
                 if (c == '\\')
                 {
                     c = reader.Read();
-                    switch(c)
+                    switch (c)
                     {
                     case '"':
                     case '\\':
@@ -451,7 +492,7 @@ namespace SMXJSON
                             if (c == -1)
         throw new ParseError(reader, "Unexpected EOF reading string");
                             if (c < '0' || c > '9')
-        throw new ParseError(reader, "Unexpected token " + c + " reading Unicode escape");
+        throw new ParseError(reader, $"Unexpected token {c} reading Unicode escape");
                             codePoint += c - (int) '0';
                         }
                         result.Append((char) codePoint);
@@ -459,7 +500,7 @@ namespace SMXJSON
                     }
 
                     default:
-        throw new ParseError(reader, "Unrecognized escape sequence in string: \\" + (char) c);
+        throw new ParseError(reader, $"Unrecognized escape sequence in string: \\{(char) c}");
                     }
 
             continue;
@@ -471,7 +512,7 @@ namespace SMXJSON
 
         static private double ReadJSONNumber(StringReader reader)
         {
-            StringBuilder number = new StringBuilder();
+            StringBuilder number = new();
             bool negative = false;
             if (reader.Peek() == '-')
             {

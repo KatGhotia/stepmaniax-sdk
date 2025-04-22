@@ -4,9 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Input;
-using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using System.Collections.Generic;
 
 namespace smx_config
 {
@@ -255,8 +253,10 @@ namespace smx_config
             if (PlatformLightsTimer != null)
                 return;
 
-            PlatformLightsTimer = new DispatcherTimer();
-            PlatformLightsTimer.Interval = new TimeSpan(0, 0, 0, 0, 33);
+            PlatformLightsTimer = new DispatcherTimer
+            {
+                Interval = new TimeSpan(0, 0, 0, 0, 33)
+            };
             PlatformLightsTimer.Start();
 
             PlatformLightsTimer.Tick += delegate (object sender, EventArgs e)
@@ -270,7 +270,7 @@ namespace smx_config
         // The config update doesn't happen in realtime, so set the platform LED colors directly.
         void SetPlatformLights()
         {
-            CommandBuffer cmd = new CommandBuffer();
+            CommandBuffer cmd = new();
 
             for (int pad = 0; pad < 2; ++pad)
             {
@@ -319,7 +319,7 @@ namespace smx_config
 
             EnabledPanelButtons = new PanelButton[9];
             for (int i = 0; i < 9; ++i)
-                EnabledPanelButtons[i] = GetTemplateChild("EnablePanel" + PanelToIndex[i]) as PanelButton;
+                EnabledPanelButtons[i] = GetTemplateChild($"EnablePanel{PanelToIndex[i]}") as PanelButton;
 
             foreach (PanelButton button in EnabledPanelButtons)
                 button.Click += EnabledPanelButtonClicked;
@@ -366,7 +366,7 @@ namespace smx_config
             // One of the panel buttons on the panel toggle UI was clicked.  Toggle the
             // panel.
             int button = GetIndexFromButton(sender);
-            Console.WriteLine("Clicked " + button);
+            Console.WriteLine($"Clicked {button}");
 
             // Set the enabled sensor mask on both pads to the state of the UI.
             foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())

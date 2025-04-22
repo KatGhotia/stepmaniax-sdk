@@ -76,20 +76,25 @@ namespace smx_config
             EditCustomSensorsButton.Visibility = Type == "custom-sensors" ? Visibility.Visible : Visibility.Hidden;
             EditCustomSensorsButton.Click += delegate (object sender, RoutedEventArgs e)
             {
-                SetCustomSensors dialog = new SetCustomSensors();
-                dialog.Owner = Window.GetWindow(this);
+                SetCustomSensors dialog = new()
+                {
+                    Owner = Window.GetWindow(this)
+                };
                 dialog.ShowDialog();
             };
 
             onConfigChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args) {
                 LoadUIFromConfig(ActivePad.GetFirstActivePadConfig(args));
             });
-            
-            onConfigInputChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args) {
+
+            onConfigInputChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args)
+            {
                 Refresh(args);
-            });
-            onConfigInputChange.RefreshOnTestDataChange = true;
-            onConfigInputChange.RefreshOnInputChange = true;
+            })
+            {
+                RefreshOnTestDataChange = true,
+                RefreshOnInputChange = true
+            };
         }
 
         private void Refresh(LoadFromConfigDelegateArgs args)
@@ -128,10 +133,9 @@ namespace smx_config
 
         private void RefreshSliderActiveProperty()
         {
-            if (Type == "custom-sensors")
-                SliderActive = ThresholdSettings.GetCustomSensors().Count > 0;
-            else
-                SliderActive = ThresholdEnabled;
+            SliderActive = Type == "custom-sensors"
+                ? ThresholdSettings.GetCustomSensors().Count > 0
+                : ThresholdEnabled;
         }
 
         // Return the panel/sensors this widget controls.

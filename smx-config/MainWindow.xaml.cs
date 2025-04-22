@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -15,7 +14,7 @@ namespace smx_config
         private const int TOOL_REVISION = 1;
         
         OnConfigChange onConfigChange;
-        ShowAutoLightsColor showAutoLightsColor = new ShowAutoLightsColor();
+        ShowAutoLightsColor showAutoLightsColor = new();
 
         public MainWindow()
         {
@@ -96,40 +95,39 @@ GIF animations will keep playing if the application is minimized.",
                 if (!config.HasAllPanels() || !config.isFSR())
         return false;
             }
-            else
-            {
-                if (panelAndSensors.Count == 0)
+            else if (panelAndSensors.Count == 0)
         return false;
-            }
 
             // Hide thresholds that only affect panels that are disabled, so we don't show
             // corner panel sliders in advanced mode if the corner panels are disabled.  We
             // don't handle this in GetControlledSensorsForSliderType, since we do want cardinal
             // and corner to write thresholds to disabled panels, so they're in sync if they're
             // turned back on.
-            switch(type)
+            // TODO: pucgenie: Create enum and use ordinal numbers as indices...
+            return type switch
             {
-            case "up-left": return enabledPanels[0];
-            case "up": return enabledPanels[1];
-            case "up-right": return enabledPanels[2];
-            case "left": return enabledPanels[3];
-            case "center": return enabledPanels[4];
-            case "right": return enabledPanels[5];
-            case "down-left": return enabledPanels[6];
-            case "down": return enabledPanels[7];
-            case "down-right": return enabledPanels[8];
-
-            // Show cardinal and corner if at least one panel they affect is enabled.
-            case "cardinal": return enabledPanels[3] || enabledPanels[5] || enabledPanels[8];
-            case "corner": return enabledPanels[0] || enabledPanels[2] || enabledPanels[6] || enabledPanels[8];
-            default: return true;
-            }
+                "up-left" => enabledPanels[0],
+                "up" => enabledPanels[1],
+                "up-right" => enabledPanels[2],
+                "left" => enabledPanels[3],
+                "center" => enabledPanels[4],
+                "right" => enabledPanels[5],
+                "down-left" => enabledPanels[6],
+                "down" => enabledPanels[7],
+                "down-right" => enabledPanels[8],
+                // Show cardinal and corner if at least one panel they affect is enabled.
+                "cardinal" => enabledPanels[3] || enabledPanels[5] || enabledPanels[8],
+                "corner" => enabledPanels[0] || enabledPanels[2] || enabledPanels[6] || enabledPanels[8],
+                _ => true,
+            };
         }
 
         ThresholdSlider CreateThresholdSlider(string type)
         {
-            ThresholdSlider slider = new ThresholdSlider();
-            slider.Type = type;
+            ThresholdSlider slider = new()
+            {
+                Type = type
+            };
             return slider;
         }
 
@@ -137,9 +135,9 @@ GIF animations will keep playing if the application is minimized.",
         {
             // Remove and recreate threshold sliders.
             ThresholdSliderContainer.Children.Clear();
-            foreach(string sliderName in ThresholdSettings.thresholdSliderNames)
+            foreach (string sliderName in ThresholdSettings.thresholdSliderNames)
             {
-                if(!IsThresholdSliderShown(sliderName))
+                if (!IsThresholdSliderShown(sliderName))
                     continue;
 
                 ThresholdSlider slider = CreateThresholdSlider(sliderName);
@@ -159,21 +157,21 @@ GIF animations will keep playing if the application is minimized.",
             HwndSource source = (HwndSource)PresentationSource.FromVisual(this);
             source.AddHook(new HwndSourceHook(WndProcHook));
 
-            Version1.Content = "SMXConfig version " + SMX.SMX.Version();
-            Version2.Content = "SMXConfig version " + SMX.SMX.Version();
-            ToolRev1.Content = "Tool Revision v" + TOOL_REVISION;
-            ToolRev2.Content = "Tool Revision v" + TOOL_REVISION;
+            Version1.Content = Version2.Content = $"SMXConfig version {SMX.SMX.Version()}";
+            
+            ToolRev1.Content = ToolRev2.Content = $"Tool Revision v{TOOL_REVISION}";
 
             AutoLightsColor.StartedDragging += delegate () { showAutoLightsColor.Start(); };
             AutoLightsColor.StoppedDragging += delegate () { showAutoLightsColor.Stop(); };
-            AutoLightsColor.StoppedDragging += delegate () { showAutoLightsColor.Stop(); };
+            // pucgenie: Why 2 times?
+            //AutoLightsColor.StoppedDragging += delegate () { showAutoLightsColor.Stop(); };
 
             CreateThresholdSliders();
 
             // This doesn't happen at the same time AutoLightsColor is used, since they're on different tabs.
             Diagnostics.SetShowAllLights += delegate (bool on)
             {
-                if(on)
+                if (on)
                     showAutoLightsColor.Start();
                 else
                     showAutoLightsColor.Stop();
@@ -185,11 +183,11 @@ GIF animations will keep playing if the application is minimized.",
                 Color color = selectedButton.getColor();
 
                 ColorButton[] colorButtons = getColorPickerButtons();
-                foreach(ColorButton button in colorButtons)
+                foreach (ColorButton button in colorButtons)
                 {
                     // Only apply this to panel colors, not the floor color.
-                    if((button as PanelColorButton) == null)
-                        continue;
+                    if ((button as PanelColorButton) == null)
+                continue;
 
                     button.setColor(color);
                 }
@@ -235,7 +233,7 @@ GIF animations will keep playing if the application is minimized.",
 
                 // If we're in panel colors mode, clear the AutoLightingUsePressedAnimations flag.
                 // Otherwise, set it.
-                if(pressedPanelColors)
+                if (pressedPanelColors)
                     config.configFlags &= ~SMX.SMXConfigFlags.AutoLightingUsePressedAnimations;
                 else
                     config.configFlags |= SMX.SMXConfigFlags.AutoLightingUsePressedAnimations;
@@ -298,12 +296,12 @@ GIF animations will keep playing if the application is minimized.",
             // If a device has connected or disconnected, refresh the displayed threshold
             // sliders.  Don't do this otherwise, or we'll do this when the sliders are
             // dragged.
-            if(args.ConnectionsChanged)
+            if (args.ConnectionsChanged)
                 CreateThresholdSliders();
 
             // If a second controller has connected and we're on Both, see if we need to prompt
             // to sync configs.  We only actually need to do this if a controller just connected.
-            if(args.ConfigurationChanged)
+            if (args.ConfigurationChanged)
                 CheckConfiguringBothPads(args);
         }
 
@@ -371,13 +369,13 @@ GIF animations will keep playing if the application is minimized.",
         {
             ComboBoxItem selection = ConnectedPadList.SelectedItem as ComboBoxItem;
             ActivePad.SelectedPad newSelection;
-            if(selection == ConnectedPadList_P1)
+            if (selection == ConnectedPadList_P1)
                 newSelection = ActivePad.SelectedPad.P1;
-            else if(selection == ConnectedPadList_P2)
+            else if (selection == ConnectedPadList_P2)
                 newSelection = ActivePad.SelectedPad.P2;
             else
                 newSelection = ActivePad.SelectedPad.Both;
-            if(ActivePad.selectedPad == newSelection)
+            if (ActivePad.selectedPad == newSelection)
                 return;
 
             ActivePad.selectedPad = newSelection;
@@ -401,19 +399,19 @@ GIF animations will keep playing if the application is minimized.",
             // we don't have to do anything.
             bool Pad1Connected = args.controller[0].info.connected;
             bool Pad2Connected = args.controller[1].info.connected;
-            if(ActivePad.selectedPad != ActivePad.SelectedPad.Both || !Pad1Connected || !Pad2Connected)
+            if (ActivePad.selectedPad != ActivePad.SelectedPad.Both || !Pad1Connected || !Pad2Connected)
                 return;
 
             // If the two pads have the same configuration, there's nothing to do.
             SMX.SMXConfig config1 = args.controller[0].config;
             SMX.SMXConfig config2 = args.controller[1].config;
-            if(ConfigurationsSynced(config1, config2))
+            if (ConfigurationsSynced(config1, config2))
                 return;
 
-            string messageBoxText = "The two pads have different settings.  Do you want to " +
-                "match P2 settings to P1 and configure both pads together?  (This won't affect panel colors.)";
+            string messageBoxText = @"The two pads have different settings.  Do you want to 
+match P2 settings to P1 and configure both pads together?  (This won't affect panel colors.)";
             MessageBoxResult result = MessageBox.Show(messageBoxText, "StepManiaX", MessageBoxButton.YesNo, MessageBoxImage.None);
-            if(result == MessageBoxResult.Yes)
+            if (result == MessageBoxResult.Yes)
             {
                 SyncP2FromP1(config1, config2);
                 return;
@@ -484,17 +482,17 @@ GIF animations will keep playing if the application is minimized.",
                 P2Connected.Visibility = Visibility.Collapsed;
             }
 
-            if(!TwoControllersConnected)
-                return;
+            if (!TwoControllersConnected)
+        return;
 
             // Set the current selection.
-            ActivePad.SelectedPad selectedPad = ActivePad.selectedPad;
-            switch(ActivePad.selectedPad)
+            ConnectedPadList.SelectedItem = ActivePad.selectedPad switch
             {
-            case ActivePad.SelectedPad.P1: ConnectedPadList.SelectedItem = ConnectedPadList_P1; break;
-            case ActivePad.SelectedPad.P2: ConnectedPadList.SelectedItem = ConnectedPadList_P2; break;
-            case ActivePad.SelectedPad.Both: ConnectedPadList.SelectedItem = ConnectedPadList_Both; break;
-            }
+                ActivePad.SelectedPad.P1 => ConnectedPadList_P1,
+                ActivePad.SelectedPad.P2 => ConnectedPadList_P2,
+                ActivePad.SelectedPad.Both => ConnectedPadList_Both,
+                _ => throw new NotImplementedException(),
+            };
         }
 
         private void UpdateAdvancedValues_Click(object sender, RoutedEventArgs e)
@@ -522,7 +520,7 @@ GIF animations will keep playing if the application is minimized.",
                 else
                 {
                     SMX.SMX.SetConfig(pad, config);
-                    AdvancedValueError.Text = "Correctly updated at " + DateTime.Now.ToLongTimeString();
+                    AdvancedValueError.Text = $"Correctly updated at {DateTime.Now.ToLongTimeString()}";
                     AdvancedValueError.Foreground = (SolidColorBrush)(new BrushConverter().ConvertFrom("#00AA00"));
                 }
             }
@@ -585,7 +583,7 @@ GIF animations will keep playing if the application is minimized.",
 
         private void ExportSettings(object sender, RoutedEventArgs e)
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
             // Save the current thresholds on the first available pad as a preset.
             foreach(Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
             {
@@ -595,10 +593,12 @@ GIF animations will keep playing if the application is minimized.",
                 string json = sb.ToString();
                 sb.Length = 0;
 
-                Microsoft.Win32.SaveFileDialog dialog = new Microsoft.Win32.SaveFileDialog();
-                dialog.FileName = "StepManiaX settings";
-                dialog.DefaultExt = ".smxcfg";
-                dialog.Filter = "StepManiaX settings (.smxcfg)|*.smxcfg";
+                Microsoft.Win32.SaveFileDialog dialog = new()
+                {
+                    FileName = "StepManiaX settings",
+                    DefaultExt = ".smxcfg",
+                    Filter = "StepManiaX settings (.smxcfg)|*.smxcfg"
+                };
                 bool result = dialog.ShowDialog().GetValueOrDefault(false);
                 if (!result)
         return;
@@ -611,10 +611,12 @@ GIF animations will keep playing if the application is minimized.",
         private void ImportSettings(object sender, RoutedEventArgs evt)
         {
             // Prompt for a file to read.
-            Microsoft.Win32.OpenFileDialog dialog = new Microsoft.Win32.OpenFileDialog();
-            dialog.FileName = "StepManiaX settings";
-            dialog.DefaultExt = ".smxcfg";
-            dialog.Filter = "StepManiaX settings (.smxcfg)|*.smxcfg";
+            Microsoft.Win32.OpenFileDialog dialog = new()
+            {
+                FileName = "StepManiaX settings",
+                DefaultExt = ".smxcfg",
+                Filter = "StepManiaX settings (.smxcfg)|*.smxcfg"
+            };
             bool result = dialog.ShowDialog().GetValueOrDefault(false);
             if (!result)
         return;
@@ -646,10 +648,12 @@ GIF animations will keep playing if the application is minimized.",
             bool pressed = sender == this.LoadPressed;
 
             // Prompt for a file to read.
-            Microsoft.Win32.OpenFileDialog dialog = new Microsoft.Win32.OpenFileDialog();
-            dialog.FileName = "Select an animated GIF";
-            dialog.DefaultExt = ".gif";
-            dialog.Filter = "Animated GIF (.gif)|*.gif";
+            Microsoft.Win32.OpenFileDialog dialog = new()
+            {
+                FileName = "Select an animated GIF",
+                DefaultExt = ".gif",
+                Filter = "Animated GIF (.gif)|*.gif"
+            };
             bool result = dialog.ShowDialog().GetValueOrDefault(false);
             if (!result)
         return;
@@ -701,7 +705,7 @@ GIF animations will keep playing if the application is minimized.",
         private void UploadLatestGIF()
         {
             // Create a progress window.  Center it on top of the main window.
-            ProgressWindow dialog = new ProgressWindow();
+            ProgressWindow dialog = new();
             dialog.Left = (Left + Width/2) - (dialog.Width/2);
             dialog.Top = (Top + Height/2) - (dialog.Height/2);
             dialog.Title = "Storing animations on pad...";

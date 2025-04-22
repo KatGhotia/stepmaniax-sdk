@@ -3,7 +3,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using System.Windows.Input;
 
 namespace smx_config
 {
@@ -55,8 +54,8 @@ namespace smx_config
         }
 
         private Rectangle Fill, Back, Lower, Higher;
-        private SolidColorBrush m_enabledColor = new SolidColorBrush(Color.FromRgb(0, 220, 0));
-        private SolidColorBrush m_disabledColor = new SolidColorBrush(Color.FromRgb(0, 0, 0));
+        private SolidColorBrush m_enabledColor = new(Color.FromRgb(0, 220, 0));
+        private SolidColorBrush m_disabledColor = new(Color.FromRgb(0, 0, 0));
 
         private Thickness m_lowerThickness;
         private Thickness m_higherThickness;

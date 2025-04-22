@@ -1,8 +1,6 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
-using System.Windows.Shapes;
 using System.Windows.Input;
 
 namespace smx_config
@@ -48,8 +46,9 @@ namespace smx_config
             base.OnApplyTemplate();
 
             OnConfigChange onConfigChange;
-            onConfigChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args) {
-                int SelectedPad = Panel < 9? 0:1;
+            onConfigChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args)
+            {
+                int SelectedPad = Panel < 9 ? 0 : 1;
                 int PanelIndex = Panel % 9;
                 Pressed = args.controller[SelectedPad].inputs[PanelIndex];
 
@@ -59,10 +58,12 @@ namespace smx_config
 
                 // Only show this panel button if the panel's input is enabled.
                 SMX.SMXConfig config = ActivePad.GetFirstActivePadConfig(args);
-                Visibility = ShouldBeDisplayed(config)? Visibility.Visible:Visibility.Collapsed;
-            });
-            onConfigChange.RefreshOnInputChange = true;
-            onConfigChange.RefreshOnTestDataChange = true;
+                Visibility = ShouldBeDisplayed(config) ? Visibility.Visible : Visibility.Collapsed;
+            })
+            {
+                RefreshOnInputChange = true,
+                RefreshOnTestDataChange = true
+            };
         }
 
         protected override void OnClick()
