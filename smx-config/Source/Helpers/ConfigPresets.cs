@@ -1,8 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace smx_config
 {
@@ -25,7 +21,7 @@ namespace smx_config
             {
                 SMX.SMXConfig PresetConfig = SMX.SMXConfig.Create();
                 SetPreset(Preset, ref PresetConfig);
-                if(SamePreset(config, PresetConfig))
+                if (SamePreset(config, PresetConfig))
         return Preset;
             }
             return "";
@@ -53,7 +49,7 @@ namespace smx_config
 
         static public void SetPreset(string name, ref SMX.SMXConfig config)
         {
-            switch(name)
+            switch (name)
             {
             case "low": SetLowPreset(ref config); return;
             case "normal": SetNormalPreset(ref config); return;
@@ -117,8 +113,8 @@ namespace smx_config
         // advanced threshold mode is off.
         static public List<int> GetPanelsToSyncUnifiedThresholds(int fromPanel)
         {
-            List<int> result = new List<int>();
-            switch(fromPanel)
+            List<int> result = new();
+            switch (fromPanel)
             {
             case 7: // down (cardinal)
                 result.Add(3); // left

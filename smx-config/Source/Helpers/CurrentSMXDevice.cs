@@ -1,13 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Windows;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Threading;
 using System.Windows.Controls;
-using System.ComponentModel;
-using System.Windows.Forms.VisualStyles;
 
 namespace smx_config
 {
@@ -73,7 +68,7 @@ namespace smx_config
 
         private readonly bool[] WasConnected = new bool[2] { false, false };
         private readonly bool[][] LastInputs = new bool[2][];
-        private SMX.SMXSensorTestModeData[] LastTestData = new SMX.SMXSensorTestModeData[2];
+        private readonly SMX.SMXSensorTestModeData[] LastTestData = new SMX.SMXSensorTestModeData[2];
         private readonly Dispatcher MainDispatcher;
 
         public CurrentSMXDevice()
@@ -85,11 +80,11 @@ namespace smx_config
             // inputs changed, configuration updated, test data updated, etc.  It doesn't specify what's changed,
             // we simply check the whole state.
             SMX.SMX.Start(delegate(int PadNumber, SMX.SMX.SMXUpdateCallbackReason reason) {
-                // Console.WriteLine("... " + reason);
+                // Console.WriteLine($"... {reason}");
                 // This is called from a thread, with SMX's internal mutex locked.  We must not call into SMX
                 // or do anything with the UI from here.  Just queue an update back into the UI thread.
                 MainDispatcher.InvokeAsync(delegate() {
-                    switch(reason)
+                    switch (reason)
                     {
                     case SMX.SMX.SMXUpdateCallbackReason.Updated:
                         CheckForChanges();
@@ -158,7 +153,7 @@ namespace smx_config
 
         public LoadFromConfigDelegateArgs GetState()
         {
-            LoadFromConfigDelegateArgs args = new LoadFromConfigDelegateArgs
+            LoadFromConfigDelegateArgs args = new()
             {
                 controller = new LoadFromConfigDelegateArgsPerController[2]
             };

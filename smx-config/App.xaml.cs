@@ -15,7 +15,7 @@ namespace smx_config
         [DllImport("kernel32.dll")]
         public static extern bool AllocConsole();
 
-        private System.Windows.Forms.NotifyIcon trayIcon = new System.Windows.Forms.NotifyIcon();
+        private System.Windows.Forms.NotifyIcon trayIcon = new();
         private MainWindow window;
 
         App()
@@ -60,14 +60,14 @@ namespace smx_config
             LaunchOnStartup.Enable = true;
             if (!SMX.SMX.DLLExists())
             {
-                MessageBox.Show("SMXConfig startup error.\n\nSMX.dll couldn't be found:\n\n" + Helpers.GetLastWin32ErrorString(), "SMXConfig");
+                MessageBox.Show($"SMXConfig startup error.\n\nSMX.dll couldn't be found:\n\n{Helpers.GetLastWin32ErrorString()}", "SMXConfig");
                 Current.Shutdown();
         return;
             }
             
             if (!SMX.SMX.DLLAvailable())
             {
-                MessageBox.Show("SMXConfig initialization error.\n\nSMX.dll failed to load:\n\n" + Helpers.GetLastWin32ErrorString(), "SMXConfig");
+                MessageBox.Show($"SMXConfig initialization error.\n\nSMX.dll failed to load:\n\n{Helpers.GetLastWin32ErrorString()}", "SMXConfig");
                 Current.Shutdown();
         return;
             }
@@ -102,7 +102,7 @@ namespace smx_config
                 window.Closed += MainWindowClosed;
                 window.Show();
             }
-            else if(IsMinimizedToTray())
+            else if (IsMinimizedToTray())
             {
                 window.Visibility = Visibility.Visible;
                 window.Activate();
@@ -144,7 +144,7 @@ namespace smx_config
         private void UnhandledExceptionEventHandler(object sender, UnhandledExceptionEventArgs e)
         {
             string message = e.ExceptionObject.ToString();
-            MessageBox.Show("SMXConfig encountered an unexpected error:\n\n" + message, "SMXConfig");
+            MessageBox.Show($"SMXConfig encountered an unexpected error:\n\n{message}", "SMXConfig");
         }
 
         protected override void OnExit(ExitEventArgs e)
@@ -173,7 +173,7 @@ namespace smx_config
         private bool ForegroundExistingInstance()
         {
             var createdNew = false;
-            EventWaitHandle SMXConfigEvent = new EventWaitHandle(false, EventResetMode.AutoReset, "SMXConfigEvent", out createdNew);
+            EventWaitHandle SMXConfigEvent = new(false, EventResetMode.AutoReset, "SMXConfigEvent", out createdNew);
             if (!createdNew)
             {
                 // Signal the event to foreground the existing instance.
@@ -202,7 +202,7 @@ namespace smx_config
         {
             // We've already checked that we're the only instance when we get here, so this event shouldn't
             // exist.  If it already exists for some reason, we'll listen to it anyway.
-            EventWaitHandle SMXConfigShutdown = new EventWaitHandle(false, EventResetMode.AutoReset, "SMXConfigShutdown");
+            EventWaitHandle SMXConfigShutdown = new(false, EventResetMode.AutoReset, "SMXConfigShutdown");
             ThreadPool.RegisterWaitForSingleObject(SMXConfigShutdown, ShutdownApplicationCallback, this, Timeout.Infinite, false);
         }
 

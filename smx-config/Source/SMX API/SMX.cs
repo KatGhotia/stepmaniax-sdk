@@ -225,7 +225,7 @@ namespace SMX
         // Create an empty SMXConfig.
         static public SMXConfig Create()
         {
-            SMXConfig result = new SMXConfig
+            SMXConfig result = new()
             {
                 enabledSensors = new Byte[5],
                 stepColor = new Byte[3 * 9],
@@ -429,7 +429,7 @@ namespace SMX
             Console.Out.WriteLine($"DLLAvailable#{callCount+=1:X4} at {DateTime.UtcNow.Ticks:X16}");
 #endif
             if (smxDLLstatus == 0) {
-                // FIXME: pucgenie: Use a bool to cache it? App needs to be restarted in any case if SMX.dll wasn't available beforehand.
+                // App needs to be restarted in any case if SMX.dll wasn't available beforehand.
                 smxDLLstatus = (byte)(LoadLibrary("SMX.dll") != IntPtr.Zero
                     ? 0x1
                     : 0x2
@@ -462,7 +462,7 @@ namespace SMX
             // Sanity check SMXConfig, which should be 250 bytes.  If this is incorrect,
             // check the padding array.
             {
-                SMXConfig config = new SMXConfig();
+                SMXConfig config = new();
                 int bytes = Marshal.SizeOf(config);
                 if (bytes != 250)
         throw new Exception($"SMXConfig is {bytes} bytes, but should be 250 bytes");
@@ -483,10 +483,7 @@ namespace SMX
             // has already updated the callback.
             CurrentUpdateCallback = NewCallback;
             
-            Console.WriteLine("Struct sizes (C#): " +
-                Marshal.SizeOf(typeof(SMXConfig)) + " " +
-                Marshal.SizeOf(typeof(SMXInfo)) + " " +
-                Marshal.SizeOf(typeof(SMXSensorTestModeData)));
+            Console.WriteLine($"Struct sizes (C#): {Marshal.SizeOf(typeof(SMXConfig))} {Marshal.SizeOf(typeof(SMXInfo))} {Marshal.SizeOf(typeof(SMXSensorTestModeData))}");
         }
 
         public static void Stop()
@@ -571,7 +568,7 @@ namespace SMX
         //Avoid multiple call for the same test mode (make the call of some multiples controls easier)
         private static bool[] m_sensorHasBeenSetOnce = new bool[2] { false, false };
         private static SensorTestMode[] m_currentMode = new SensorTestMode[2] { SensorTestMode.Off, SensorTestMode.Off };
-        private static Dictionary<string, SensorTestMode> m_modeBySource = new Dictionary<string, SensorTestMode>();
+        private static Dictionary<string, SensorTestMode> m_modeBySource = new();
 
         //Cas 1
         //Off  Test1
@@ -724,7 +721,7 @@ namespace SMX
             if (!DLLAvailable())
         return;
 
-            GCHandle handle = new GCHandle();
+            GCHandle handle = new();
             InternalLightsUploadCallback wrapper = delegate(int progress, IntPtr user)
             {
                 try {

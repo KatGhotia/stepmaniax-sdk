@@ -1,12 +1,6 @@
-﻿using System;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Media;
-using System.Windows.Input;
-using System.Windows.Media.Imaging;
-using System.Windows.Threading;
-using System.Collections.Generic;
 
 namespace smx_config
 {
@@ -53,7 +47,7 @@ namespace smx_config
             HueSlider.StartedDragging += delegate () { StartedDragging?.Invoke(); };
             HueSlider.StoppedDragging += delegate () { StoppedDragging?.Invoke(); };
 
-            DoubleCollection ticks = new DoubleCollection();
+            DoubleCollection ticks = new();
             // Add a tick at the minimum value, which is a negative value.  This is the
             // tick for white.
             ticks.Add(HueSlider.Minimum);

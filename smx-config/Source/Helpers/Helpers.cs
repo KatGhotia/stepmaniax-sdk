@@ -53,9 +53,9 @@ namespace smx_config
                     Pad1Connected = false;
             }
 
-            if(Pad1Connected)
+            if (Pad1Connected)
                 yield return Tuple.Create(0, args.controller[0].config);
-            if(Pad2Connected)
+            if (Pad2Connected)
                 yield return Tuple.Create(1, args.controller[1].config);
         }
 
@@ -201,31 +201,27 @@ namespace smx_config
 
         public static Color FromHSV(double H, double S, double V)
         {
-            H = H % 360;
+            H %= 360;
             S = Math.Max(0, Math.Min(1, S));
             V = Math.Max(0, Math.Min(1, V));
-            if(H < 0)
+            if (H < 0) // pucgenie: Should not be possible after %360
                 H += 360;
             H /= 60;
  
-            if( S < 0.0001f )
+            if (S < 0.0001f)
                     return ColorFromFloatRGB(V, V, V);
  
             double C = V * S;
             double X = C * (1 - Math.Abs((H % 2) - 1));
-
-            Color ret;
-            // pucgenie: Why round after floor?
-            switch( (int) Math.Round(Math.Floor(H)) )
+            var ret = (int)Math.Round(Math.Floor(H)) switch
             {
-            default: ret = ColorFromFloatRGB(C, 0, X); break;
-            case 0:  ret = ColorFromFloatRGB(C, X, 0); break;
-            case 1:  ret = ColorFromFloatRGB(X, C, 0); break;
-            case 2:  ret = ColorFromFloatRGB(0, C, X); break;
-            case 3:  ret = ColorFromFloatRGB(0, X, C); break;
-            case 4:  ret = ColorFromFloatRGB(X, 0, C); break;
-            }
-
+                0 => ColorFromFloatRGB(C, X, 0),
+                1 => ColorFromFloatRGB(X, C, 0),
+                2 => ColorFromFloatRGB(0, C, X),
+                3 => ColorFromFloatRGB(0, X, C),
+                4 => ColorFromFloatRGB(X, 0, C),
+                _ => ColorFromFloatRGB(C, 0, X),
+            };
             ret -= ColorFromFloatRGB(C-V, C-V, C-V);
             return ret;
         }
@@ -233,8 +229,8 @@ namespace smx_config
         public static void ToHSV(Color c, out double h, out double s, out double v)
         {
             h = s = v = 0;
-            if( c.R == 0 && c.G == 0 && c.B == 0 )
-                return;
+            if (c.R == 0 && c.G == 0 && c.B == 0)
+        return;
 
             double r = c.R / 255.0;
             double g = c.G / 255.0;
@@ -243,18 +239,18 @@ namespace smx_config
             double m = Math.Min(Math.Min(r, g), b);
             double M = Math.Max(Math.Max(r, g), b);
             double C = M - m;
-            if( Math.Abs(r-g) < 0.0001f && Math.Abs(g-b) < 0.0001f ) // grey
+            if (Math.Abs(r-g) < 0.0001f && Math.Abs(g-b) < 0.0001f) // grey
                     h = 0;
-            else if( Math.Abs(r-M) < 0.0001f ) // M == R
+            else if (Math.Abs(r-M) < 0.0001f) // M == R
                     h = ((g - b)/C) % 6;
-            else if( Math.Abs(g-M) < 0.0001f ) // M == G
+            else if (Math.Abs(g-M) < 0.0001f) // M == G
                     h = (b - r)/C + 2;
             else // M == B
                     h = (r - g)/C + 4;
 
             h *= 60;
-            if( h < 0 )
-                    h += 360;
+            if (h < 0)
+                h += 360;
  
             s = C / M;
             v = M;
@@ -275,7 +271,7 @@ namespace smx_config
             System.IO.File.WriteAllBytes(outputFile.FullName, data);
         }
 
-        public static Dictionary<SMX.SMX.LightsType, string> LightsTypeNames = new Dictionary<SMX.SMX.LightsType, string>()
+        public static Dictionary<SMX.SMX.LightsType, string> LightsTypeNames = new()
         {
             { SMX.SMX.LightsType.LightsType_Pressed, "pressed" },
             { SMX.SMX.LightsType.LightsType_Released, "released" },
@@ -347,7 +343,7 @@ namespace smx_config
         return true;
                 } catch (IOException e)
                 {
-                    Console.Error.WriteLine("Error writing settings.  Trying again: " + e);
+                    Console.Error.WriteLine($"Error writing settings.  Trying again: {e}");
                 }
             }
             return false;
@@ -386,7 +382,7 @@ namespace smx_config
             public int sensor;
         };
         
-        public static List<string> thresholdSliderNames = new List<string>()
+        public static readonly List<string> thresholdSliderNames = new()
         {
             "up-left", "up", "up-right",
             "left", "center", "right",
@@ -398,7 +394,7 @@ namespace smx_config
         };
 
         // These correspond with ThresholdSlider.Type.
-        static Dictionary<string, int> panelNameToIndex = new Dictionary<string, int>() {
+        static readonly Dictionary<string, int> panelNameToIndex = new() {
             { "up-left",    0 },
             { "up",         1 },
             { "up-right",   2 },
@@ -420,10 +416,10 @@ namespace smx_config
         static List<PanelAndSensor> cachedCustomSensors;
         static public void SetCustomSensors(List<PanelAndSensor> panelAndSensors)
         {
-            List<object> result = new List<object>();
+            List<object> result = new();
             foreach(PanelAndSensor panelAndSensor in panelAndSensors)
             {
-                List<int> panelAndSensorArray = new List<int>() { panelAndSensor.panel, panelAndSensor.sensor };
+                List<int> panelAndSensorArray = new() { panelAndSensor.panel, panelAndSensor.sensor };
                 result.Add(panelAndSensorArray);
             }
 
@@ -434,7 +430,7 @@ namespace smx_config
         // export to JSON.
         static public void SetCustomSensorsJSON(List<object> panelAndSensors)
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
             SerializeJSON.Serialize(panelAndSensors, sb, 0);
             sb.Append('\n');
             Properties.Settings.Default.CustomSensors = sb.ToString();
@@ -499,10 +495,10 @@ namespace smx_config
         {
             return new List<PanelAndSensor>()
             {
-                new PanelAndSensor(1,SensorDown), // up panel, bottom sensor
-                new PanelAndSensor(3,SensorRight), // left panel, right sensor
-                new PanelAndSensor(5,SensorLeft), // right panel, left sensor
-                new PanelAndSensor(7,SensorUp), // down panel, top sensor
+                new(1,SensorDown), // up panel, bottom sensor
+                new(3,SensorRight), // left panel, right sensor
+                new(5,SensorLeft), // right panel, left sensor
+                new(7,SensorUp), // down panel, top sensor
             };
         }
 
@@ -510,10 +506,10 @@ namespace smx_config
         {
             return new List<PanelAndSensor>()
             {
-                new PanelAndSensor(1,SensorUp), // up panel, top sensor
-                new PanelAndSensor(3,SensorLeft), // left panel, left sensor
-                new PanelAndSensor(5,SensorRight), // right panel, right sensor
-                new PanelAndSensor(7,SensorDown), // down panel, bottom sensor
+                new(1,SensorUp), // up panel, top sensor
+                new(3,SensorLeft), // left panel, left sensor
+                new(5,SensorRight), // right panel, right sensor
+                new(7,SensorDown), // down panel, bottom sensor
             };
         }
         // Return the sensors controlled by the given slider.  Most of the work is done
@@ -572,13 +568,19 @@ namespace smx_config
                     (Type == "inner-sensors" && !Properties.Settings.Default.UseInnerSensorThresholds)
                     || (Type == "outer-sensors" && !Properties.Settings.Default.UseOuterSensorThresholds)
                 )
-            )
+            ) {
         return new List<PanelAndSensor>();
+            }
 
             // Special sliders:
-            if (Type == "custom-sensors") return GetCustomSensors();
-            if (Type == "inner-sensors") return GetInnerSensors();
-            if (Type == "outer-sensors") return GetOuterSensors();
+            switch (Type) {
+                case "custom-sensors":
+        return GetCustomSensors();
+                case "inner-sensors":
+        return GetInnerSensors();
+                case "outer-sensors":
+        return GetOuterSensors();
+            }
 
             var result = new List<PanelAndSensor>();
 
@@ -625,22 +627,23 @@ namespace smx_config
         // before it was changed.  This is tricky to fix and not a big problem.
         private static void SyncSliderThresholdsForConfig(ref SMX.SMXConfig config)
         {
-            if(!config.isFSR())
-                return;
+            if (!config.isFSR())
+        return;
 
-            foreach(string sliderName in thresholdSliderNames)
+            foreach (string sliderName in thresholdSliderNames)
             {
-                List<PanelAndSensor> controlledSensors = GetControlledSensorsForSliderType(sliderName, config.HasAllPanels(), false);
-                if(controlledSensors.Count == 0)
-                    continue;
-                PanelAndSensor firstSensor = controlledSensors[0];
+                var controlledSensors = GetControlledSensorsForSliderType(sliderName, config.HasAllPanels(), false);
+                if (controlledSensors.Count == 0)
+            continue;
+                var firstSensor = controlledSensors[0];
+                var firstSensorFSRLowThreshold = config.panelSettings[firstSensor.panel].fsrLowThreshold[firstSensor.sensor];
+                var firstSensorFSRHighThreshold = config.panelSettings[firstSensor.panel].fsrHighThreshold[firstSensor.sensor];
 
-                foreach(PanelAndSensor panelAndSensor in controlledSensors)
+                foreach (var panelAndSensor in controlledSensors)
                 {
-                    config.panelSettings[panelAndSensor.panel].fsrLowThreshold[panelAndSensor.sensor] = 
-                        config.panelSettings[firstSensor.panel].fsrLowThreshold[firstSensor.sensor];
-                    config.panelSettings[panelAndSensor.panel].fsrHighThreshold[panelAndSensor.sensor] =
-                        config.panelSettings[firstSensor.panel].fsrHighThreshold[firstSensor.sensor];
+                    var otherPanelSettings = config.panelSettings[panelAndSensor.panel];
+                    otherPanelSettings.fsrLowThreshold[panelAndSensor.sensor] = firstSensorFSRLowThreshold;
+                    otherPanelSettings.fsrHighThreshold[panelAndSensor.sensor] = firstSensorFSRHighThreshold;
                 }
             }
         }
@@ -712,7 +715,7 @@ namespace smx_config
             return result;
         }
 
-        private LinkedList<byte[]> parts = new LinkedList<byte[]>();
+        private LinkedList<byte[]> parts = new();
     };
 
     // Manage launching on startup.
@@ -768,10 +771,11 @@ namespace smx_config
 
         public ShowAutoLightsColor()
         {
-            LightsTimer = new DispatcherTimer();
-
-            // Run at 30fps.
-            LightsTimer.Interval = new TimeSpan(0,0,0,0, 1000 / 33);
+            LightsTimer = new DispatcherTimer
+            {
+                // Run at 30fps.
+                Interval = new TimeSpan(0, 0, 0, 0, 1000 / 33)
+            };
 
             LightsTimer.Tick += delegate(object sender, EventArgs e)
             {
@@ -807,7 +811,7 @@ namespace smx_config
 
         private void AutoLightsColorRefreshColor()
         {
-            CommandBuffer cmd = new CommandBuffer();
+            CommandBuffer cmd = new();
 
             for (int pad = 0; pad < 2; ++pad)
             {
@@ -898,7 +902,7 @@ namespace smx_config
         {
             var dict = SMXJSON.ParseJSON.Parse<Dictionary<string, Object>>(json);
             // Read the thresholds.  If any values are missing, we'll leave the value in config alone.
-            if(config.isFSR())
+            if (config.isFSR())
             {
                 List<Object> newPanelLowThresholds = dict.Get("fsrLowThresholds", new List<Object>());
                 List<Object> newPanelHighThresholds = dict.Get("fsrHighThresholds", new List<Object>());
@@ -913,8 +917,8 @@ namespace smx_config
             }
             else
             {
-                List<Object> newPanelLowThresholds = dict.Get("panelLowThresholds", new List<Object>());
-                List<Object> newPanelHighThresholds = dict.Get("panelHighThresholds", new List<Object>());
+                var newPanelLowThresholds = dict.Get("panelLowThresholds", new List<Object>());
+                var newPanelHighThresholds = dict.Get("panelHighThresholds", new List<Object>());
                 for(int panel = 0; panel < 9; ++panel)
                 {
                     config.panelSettings[panel].loadCellLowThreshold = newPanelLowThresholds.Get(panel, config.panelSettings[panel].loadCellLowThreshold);
@@ -922,24 +926,24 @@ namespace smx_config
                 }
             }
 
-            List<Object> enabledPanelList = dict.Get<List<Object>>("enabledPanels", null);
-            if(enabledPanelList != null)
+            var enabledPanelList = dict.Get<List<Object>>("enabledPanels", null);
+            if (enabledPanelList != null)
             {
                 bool[] enabledPanels = new bool[9];
-                for(int i = 0; i < enabledPanelList.Count; ++i)
+                for (int i = 0; i < enabledPanelList.Count; ++i)
                 {
                     int panel = enabledPanelList.Get(i, 0);
 
                     // Sanity check:
-                    if(panel < 0 || panel >= 9)
-                        continue;
+                    if (panel < 0 || panel >= 9)
+                continue;
                     enabledPanels[panel] = true;
                 }
                 config.SetEnabledPanels(enabledPanels);
             }
 
-            List<Object> panelColors = dict.Get<List<Object>>("panelColors", null);
-            if(panelColors != null)
+            var panelColors = dict.Get<List<Object>>("panelColors", null);
+            if (panelColors != null)
             {
                 for(int PanelIndex = 0; PanelIndex < 9 && PanelIndex < panelColors.Count; ++PanelIndex)
                 {
@@ -969,8 +973,8 @@ namespace smx_config
             public double MinRange;
         }
 
-        private static ThresholdDefinition FSRThreshold = new ThresholdDefinition() { UserMin = 1, UserMax = 250, RealMin = 0, RealMax = 250, MinRange = 1 };
-        private static ThresholdDefinition LoadCellsThreshold = new ThresholdDefinition() { UserMin = 1, UserMax = 200, RealMin = 0, RealMax = 500, MinRange = 1 };
+        private static ThresholdDefinition FSRThreshold = new() { UserMin = 1, UserMax = 250, RealMin = 0, RealMax = 250, MinRange = 1 };
+        private static ThresholdDefinition LoadCellsThreshold = new() { UserMin = 1, UserMax = 200, RealMin = 0, RealMax = 500, MinRange = 1 };
 
 
         public static ThresholdDefinition GetThresholdDefinition(bool isFSR)

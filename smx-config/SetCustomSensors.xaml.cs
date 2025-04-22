@@ -22,15 +22,15 @@ namespace smx_config
             set { this.SetValue(PanelProperty, value); }
         }
 
-        ToggleButton[] SensorSelectionButtons = new ToggleButton[4];
+        readonly ToggleButton[] SensorSelectionButtons = new ToggleButton[4];
         public override void OnApplyTemplate()
         {
             base.OnApplyTemplate();
 
-            for(int sensor = 0; sensor < 4; ++sensor)
+            for (int sensor = 0; sensor < 4; ++sensor)
             {
                 int ThisSensor = sensor; // bind
-                SensorSelectionButtons[sensor] = GetTemplateChild("Sensor" + sensor) as ToggleButton;
+                SensorSelectionButtons[sensor] = GetTemplateChild($"Sensor{sensor}") as ToggleButton;
                 SensorSelectionButtons[sensor].Click += delegate(object sender, RoutedEventArgs e)
                 {
                     ClickedSensorButton(ThisSensor);
@@ -49,11 +49,11 @@ namespace smx_config
         private void ClickedSensorButton(int sensor)
         {
             // Toggle the clicked sensor.
-            Console.WriteLine("Clicked sensor " + sensor);
+            Console.WriteLine($"Clicked sensor {sensor}");
             List<ThresholdSettings.PanelAndSensor> customSensors = ThresholdSettings.GetCustomSensors();
             bool enabled = !IsSensorEnabled(customSensors, sensor);
 
-            if(enabled)
+            if (enabled)
                 customSensors.Add(new ThresholdSettings.PanelAndSensor(Panel, sensor));
             else
                 customSensors.Remove(new ThresholdSettings.PanelAndSensor(Panel, sensor));
@@ -68,9 +68,9 @@ namespace smx_config
         // Return true if the given sensor is included in custom-sensors.
         bool IsSensorEnabled(List<ThresholdSettings.PanelAndSensor> customSensors, int sensor)
         {
-            foreach(ThresholdSettings.PanelAndSensor panelAndSensor in customSensors)
+            foreach (var panelAndSensor in customSensors)
             {
-                if(panelAndSensor.panel == Panel && panelAndSensor.sensor == sensor)
+                if (panelAndSensor.panel == Panel && panelAndSensor.sensor == sensor)
         return true;
             }
             return false;
@@ -79,8 +79,8 @@ namespace smx_config
         private void LoadUIFromConfig(LoadFromConfigDelegateArgs args)
         {
             // Check the selected custom-sensors.
-            List<ThresholdSettings.PanelAndSensor> customSensors = ThresholdSettings.GetCustomSensors();
-            for(int sensor = 0; sensor < 4; ++sensor)
+            var customSensors = ThresholdSettings.GetCustomSensors();
+            for (int sensor = 0; sensor < 4; ++sensor)
                 SensorSelectionButtons[sensor].IsChecked = IsSensorEnabled(customSensors, sensor);
         }
     }

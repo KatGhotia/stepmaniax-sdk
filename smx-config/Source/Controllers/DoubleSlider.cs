@@ -1,13 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-using System.Windows.Input;
 
 namespace smx_config
 {
@@ -132,7 +126,7 @@ namespace smx_config
         
         private void MoveValue(double delta)
         {
-            if(delta > 0)
+            if (delta > 0)
             {
                 // If this increase will be clamped when changing the upper value, reduce it
                 // so it clamps the lower value too.  This way, the distance between the upper
@@ -198,7 +192,7 @@ namespace smx_config
             {
                 // Convert the pixel delta to a value change.
                 double sizeToValue = 1 / GetValueToSize();
-                Console.WriteLine("drag: " + e.HorizontalChange + ", " + sizeToValue + ", " + e.HorizontalChange * sizeToValue);
+                Console.WriteLine($"drag: {e.HorizontalChange}, {sizeToValue}, {e.HorizontalChange * sizeToValue}");
                 MoveValue(e.HorizontalChange * sizeToValue);
             };
 
