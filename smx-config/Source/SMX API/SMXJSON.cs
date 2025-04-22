@@ -338,10 +338,11 @@ namespace SMXJSON
             int nextCharacter = reader.Peek();
             switch (nextCharacter)
             {
-            case '"':
-            StringBuilder sb = new();
-            ReadJSONString(reader, sb);
+            case '"': {
+                StringBuilder sb = new();
+                ReadJSONString(reader, sb);
         return sb.ToString();
+            }
             case '{':
         return ReadJSONDictionary(reader);
             case '[':
