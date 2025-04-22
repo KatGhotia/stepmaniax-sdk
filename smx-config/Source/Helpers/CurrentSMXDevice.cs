@@ -32,9 +32,13 @@ namespace smx_config
         // Data for each of two controllers:
         public LoadFromConfigDelegateArgsPerController[] controller;
 
-        // If we have more than one connected controller, we don't expect them to be the same version anymore.
-        // Return the {oldest, newest} firmware version that's connected.
-        public short[] firmwareVersion()
+        /// <summary>
+        /// If we have more than one connected controller, we don't fully expect them to be the same version anymore.
+        /// 
+        /// If minVersion > maxVersion, detection was skipped. TODO: remove code depending on old behaviour.
+        /// </summary>
+        /// <returns>Return the {oldest, newest} firmware version that's connected.</returns>
+        public Tuple<short, short> firmwareVersion()
         {
             short minVersion = short.MaxValue, maxVersion = short.MinValue;
             foreach (var data in controller)
@@ -48,7 +52,8 @@ namespace smx_config
                     }
                 }
             }
-            return new short[]{minVersion, maxVersion,};
+            Console.Error.WriteLine($"minVersion: {minVersion}, maxVersion: {maxVersion}");
+            return new Tuple<short, short>(minVersion, maxVersion);
         }
 
         // The control that changed the configuration (passed to FireConfigurationChanged).
@@ -66,10 +71,10 @@ namespace smx_config
         public delegate void ConfigurationChangedDelegate(LoadFromConfigDelegateArgs args);
         public event ConfigurationChangedDelegate ConfigurationChanged;
 
-        private bool[] WasConnected = new bool[2] { false, false };
-        private bool[][] LastInputs = new bool[2][];
+        private readonly bool[] WasConnected = new bool[2] { false, false };
+        private readonly bool[][] LastInputs = new bool[2][];
         private SMX.SMXSensorTestModeData[] LastTestData = new SMX.SMXSensorTestModeData[2];
-        private Dispatcher MainDispatcher;
+        private readonly Dispatcher MainDispatcher;
 
         public CurrentSMXDevice()
         {
@@ -131,12 +136,16 @@ namespace smx_config
                 {
                     args.TestDataChanged = true;
                     LastTestData[pad] = controller.test_data;
+                    // TODO: pucgenie: collect data for pressure statistics here?
+                    Console.Out.WriteLine($"{pad} {controller.test_data.sensorLevel.Max()}");
                 }
             }
 
             // Only fire the delegate if something has actually changed.
-            if (args.ConfigurationChanged || args.InputChanged || args.TestDataChanged)
+            if (args.ConfigurationChanged || args.InputChanged || args.TestDataChanged) {
+                // TODO: pucgenie: Split it up into 3 distinct events?
                 ConfigurationChanged?.Invoke(args);
+            }
         }
 
         public void FireConfigurationChanged(object source)
@@ -243,7 +252,6 @@ namespace smx_config
         }
     };
 
-
     public class OnInputChange
     {
         public delegate void LoadFromConfigDelegate(LoadFromConfigDelegateArgs args);
@@ -263,7 +271,7 @@ namespace smx_config
 
             // This is available when the application is running, but will be null in the XAML designer.
             if (CurrentSMXDevice.singleton == null)
-                return;
+        return;
 
             Owner.Loaded += delegate(object sender, RoutedEventArgs e)
             {

@@ -143,7 +143,7 @@ namespace smx_config
             Button Recalibrate = Template.FindName("Recalibrate", this) as Button;
             Recalibrate.Click += delegate(object sender, RoutedEventArgs e)
             {
-                for(int pad = 0; pad < 2; ++pad)
+                for (int pad = 0; pad < 2; ++pad)
                     SMX.SMX.ForceRecalibration(pad);
             };
             
@@ -162,39 +162,29 @@ namespace smx_config
             // Update the test mode when the dropdown is changed.
             DiagnosticMode.AddHandler(ComboBox.SelectionChangedEvent, new RoutedEventHandler(delegate(object sender, RoutedEventArgs e)
             {
-                for(int pad = 0; pad < 2; ++pad)
-                    SMX.SMX.SetSensorTestMode(pad, GetTestMode(), "Diagnostics");
+                for (int pad = 0; pad < 2; ++pad)
+                    SMX.SMX.SetSensorTestMode(pad, (SMX.SMX.SensorTestMode) DiagnosticMode.SelectedValue, "Diagnostics");
             }));
 
             OnConfigChange onConfigChange;
             onConfigChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args) {
                 Refresh(args);
-            });
-            onConfigChange.RefreshOnTestDataChange = true;
+            })
+            {
+                RefreshOnTestDataChange = true
+            };
 
             Loaded += delegate(object sender, RoutedEventArgs e)
             {
-                for(int pad = 0; pad < 2; ++pad)
-                    SMX.SMX.SetSensorTestMode(pad, GetTestMode(), "Diagnostics");
+                for (int pad = 0; pad < 2; ++pad)
+                    SMX.SMX.SetSensorTestMode(pad, (SMX.SMX.SensorTestMode) DiagnosticMode.SelectedValue, "Diagnostics");
             };
 
             Unloaded += delegate(object sender, RoutedEventArgs e)
             {
-                for(int pad = 0; pad < 2; ++pad)
+                for (int pad = 0; pad < 2; ++pad)
                     SMX.SMX.SetSensorTestMode(pad, SMX.SMX.SensorTestMode.Off, "Diagnostics");
             };
-        }
-
-        private SMX.SMX.SensorTestMode GetTestMode()
-        {
-            switch(DiagnosticMode.SelectedIndex)
-            {
-            case 0: return SMX.SMX.SensorTestMode.CalibratedValues;
-            case 1: return SMX.SMX.SensorTestMode.UncalibratedValues;
-            case 2: return SMX.SMX.SensorTestMode.Noise;
-            case 3:
-            default: return SMX.SMX.SensorTestMode.Tare;
-            }
         }
 
         private void Refresh(LoadFromConfigDelegateArgs args)
@@ -221,7 +211,7 @@ namespace smx_config
 
             // Update the displayed DIP switch icons.
             if (SelectedPanel == null) {
-
+                Console.Error.WriteLine("No panel selected - refreshing not possible.");
             } else {
                 int SelectedPad = SelectedPanel < 9 ? 0 : 1;
                 int PanelIndex = (int)(SelectedPanel % 9);
@@ -245,9 +235,9 @@ namespace smx_config
                 for (int sensor = 0; sensor < 4; ++sensor)
                 {
                     var controllerData = args.controller[SelectedPad];
-                    Int16 value = controllerData.test_data.sensorLevel[PanelIndex*4+sensor];
+                    var value = controllerData.test_data.sensorLevel[PanelIndex*4+sensor];
 
-                    if (GetTestMode() == SMX.SMX.SensorTestMode.Noise)
+                    if ((SMX.SMX.SensorTestMode) DiagnosticMode.SelectedValue == SMX.SMX.SensorTestMode.Noise)
                     {
                         // In noise mode, we receive standard deviation values squared.  Display the square
                         // root, since the panels don't do this for us.  This makes the numbers different
@@ -257,14 +247,14 @@ namespace smx_config
                     }
 
                     LevelBarText[sensor].Visibility = Visibility.Visible;
-                    if(!args.controller[SelectedPad].test_data.bHaveDataFromPanel[PanelIndex])
+                    if (!args.controller[SelectedPad].test_data.bHaveDataFromPanel[PanelIndex])
                     {
                         LevelBars[sensor].Value = 0;
                         LevelBarText[sensor].Visibility = Visibility.Hidden;
                         LevelBarText[sensor].Content = "-";
                         LevelBars[sensor].Error = false;
                     }
-                    else if(args.controller[SelectedPad].test_data.bBadSensorInput[PanelIndex*4+sensor])
+                    else if (args.controller[SelectedPad].test_data.bBadSensorInput[PanelIndex*4+sensor])
                     {
                         LevelBars[sensor].Value = 0;
                         LevelBarText[sensor].Content = "!";
@@ -272,10 +262,13 @@ namespace smx_config
                     }
                     else
                     {
-                        // Very slightly negative values happen due to noise.  They don't indicate a
-                        // problem, but they're confusing in the UI, so clamp them away.
-                        if (value < 0 && value >= -10)
-                            value = 0;
+                        // FIXME: pucgenie: Should be a user-controlled setting (defaulting to true...)
+                        if (false) {
+                            // Very slightly negative values happen due to noise.  They don't indicate a
+                            // problem, but they're confusing in the UI, so clamp them away.
+                            if (value < 0 && value >= -10)
+                                value = 0;
+                        }
 
                         // Scale differently depending on if this is an FSR panel or a load cell panel.
                         bool isFSR = controllerData.config.isFSR();
@@ -298,7 +291,7 @@ namespace smx_config
 
                 NoResponseFromPanel.Visibility = Visibility.Collapsed;
                 CurrentDIPGroup.Visibility = Visibility.Visible;
-                if(!args.controller[SelectedPad].test_data.bHaveDataFromPanel[PanelIndex])
+                if (!args.controller[SelectedPad].test_data.bHaveDataFromPanel[PanelIndex])
                 {
                     NoResponseFromPanel.Visibility = Visibility.Visible;
                     NoResponseFromSensors.Visibility = Visibility.Collapsed;
@@ -334,7 +327,7 @@ namespace smx_config
             if (!enabledPanels[SelectedPanelIndex]) {
                 SelectedPanel = config.GetFirstEnabledPanel();
                 if (SelectedPanel == null) {
-                    Console.Error.WriteLine("No panels/sensors enabled at all! File a bug report on github.com/pucgenie/stepmaniax-sdk .");
+                    Console.Error.WriteLine("No panels/sensors enabled at all! File a bug report on github.com/katghotia/stepmaniax-sdk if you can think of a good reason why to support that.");
                 }
             }
         }

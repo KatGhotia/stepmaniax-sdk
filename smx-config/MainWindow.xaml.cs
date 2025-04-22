@@ -260,7 +260,7 @@ GIF animations will keep playing if the application is minimized.",
             PanelColorP2.Visibility = args.controller[1].info.connected ? Visibility.Visible : Visibility.Collapsed;
             // TODO: pucgenie: Take into account minVersion of firmware for selectively hiding unavailable options
             EnableCenterTopSensorCheckbox.Visibility = P1_Floor.Visibility = P2_Floor.Visibility =
-                args.firmwareVersion()[1] >= 5 ? Visibility.Visible : Visibility.Collapsed;
+                args.firmwareVersion().Item2 >= 5 ? Visibility.Visible : Visibility.Collapsed;
 
             DebounceNodelayBox.Text = firstConfig.debounceNodelayMilliseconds.ToString();
             DebounceDelayBox.Text = firstConfig.debounceDelayMs.ToString();

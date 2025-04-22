@@ -539,12 +539,33 @@ namespace SMX
             SMX_SetConfig(pad, ref config);
         }
 
+        [AttributeUsage(AttributeTargets.Field)]
+        public sealed class DisplayStringAttribute : Attribute
+        {
+            private readonly string value;
+            public string Value
+            {
+                get { return value; }
+            }
+
+            public string ResourceKey { get; set; }
+
+            public DisplayStringAttribute(string v)
+            {
+                this.value = v;
+            }
+
+            public DisplayStringAttribute()
+            {
+            }
+        }
+
         public enum SensorTestMode {
-                Off = 0,
-                UncalibratedValues = '0',
-                CalibratedValues = '1',
-                Noise = '2',
-                Tare = '3',
+                [DisplayString("Off")] Off = 0,
+                [DisplayString("Raw values")] UncalibratedValues = '0',
+                [DisplayString("Calibrated values")] CalibratedValues = '1',
+                [DisplayString("Noise")] Noise = '2',
+                [DisplayString("Tare")] Tare = '3',
         };
 
         //Avoid multiple call for the same test mode (make the call of some multiples controls easier)
