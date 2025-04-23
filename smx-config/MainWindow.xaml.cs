@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Interop;
 using System.Text;
+using System.IO.IsolatedStorage;
 
 namespace smx_config
 {
@@ -270,15 +271,6 @@ GIF animations will keep playing if the application is minimized.",
             };
         }
 
-        ThresholdSlider CreateThresholdSlider(string type)
-        {
-            ThresholdSlider slider = new()
-            {
-                Type = type
-            };
-            return slider;
-        }
-
         void CreateThresholdSliders()
         {
             // Remove and recreate threshold sliders.
@@ -286,9 +278,12 @@ GIF animations will keep playing if the application is minimized.",
             foreach (string sliderName in ThresholdSettings.thresholdSliderNames)
             {
                 if (!IsThresholdSliderShown(sliderName))
-                    continue;
+            continue;
 
-                ThresholdSlider slider = CreateThresholdSlider(sliderName);
+                ThresholdSlider slider = new()
+                {
+                    Type = sliderName
+                };
                 DockPanel.SetDock(slider, Dock.Top);
                 slider.Margin = new Thickness(0, 8, 0, 0);
                 ThresholdSliderContainer.Children.Add(slider);
@@ -530,14 +525,8 @@ GIF animations will keep playing if the application is minimized.",
 
         private void ConnectedPadList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            ComboBoxItem selection = ConnectedPadList.SelectedItem as ComboBoxItem;
-            ActivePad.SelectedPad newSelection;
-            if (selection == ConnectedPadList_P1)
-                newSelection = ActivePad.SelectedPad.P1;
-            else if (selection == ConnectedPadList_P2)
-                newSelection = ActivePad.SelectedPad.P2;
-            else
-                newSelection = ActivePad.SelectedPad.Both;
+            var newSelection = (ConnectedPadList.SelectedValue as SelectedPad?).Value;
+            
             if (ActivePad.selectedPad == newSelection)
                 return;
 
@@ -562,7 +551,7 @@ GIF animations will keep playing if the application is minimized.",
             // we don't have to do anything.
             bool Pad1Connected = args.controller[0].info.connected;
             bool Pad2Connected = args.controller[1].info.connected;
-            if (ActivePad.selectedPad != ActivePad.SelectedPad.Both || !Pad1Connected || !Pad2Connected)
+            if (ActivePad.selectedPad != SelectedPad.Both || !Pad1Connected || !Pad2Connected)
                 return;
 
             // If the two pads have the same configuration, there's nothing to do.
@@ -582,7 +571,7 @@ match P2 settings to P1 and configure both pads together?  (This won't affect pa
             else
             {
                 // Switch to P1.
-                ActivePad.selectedPad = ActivePad.SelectedPad.P1;
+                ActivePad.selectedPad = SelectedPad.P1;
                 RefreshConnectedPadList(CurrentSMXDevice.singleton.GetState());
             }
 
@@ -618,7 +607,8 @@ match P2 settings to P1 and configure both pads together?  (This won't affect pa
         // Refresh which items are visible in the connected pads list, and which item is displayed as selected.
         private void RefreshConnectedPadList(LoadFromConfigDelegateArgs args)
         {
-            bool TwoControllersConnected = args.controller[0].info.connected && args.controller[1].info.connected;
+            var PxConnected = (from controller in args.controller select controller.info.connected).ToArray();
+            bool TwoControllersConnected = PxConnected.All(ci => ci);
 
             // Only show the dropdown if two controllers are connected.
             ConnectedPadList.Visibility = TwoControllersConnected ? Visibility.Visible : Visibility.Collapsed;
@@ -626,19 +616,19 @@ match P2 settings to P1 and configure both pads together?  (This won't affect pa
             // Only show the P1/P2 text if only one controller is connected, since it takes the place
             // of the dropdown. Make sure to set the selectedPad too in case callers use that to determine
             // which pad is being configured.
-            if (!TwoControllersConnected && args.controller[0].info.connected)
+            if (!TwoControllersConnected && PxConnected[0])
             {
                 P1Connected.Visibility = Visibility.Visible;
-                ActivePad.selectedPad = ActivePad.SelectedPad.P1;
+                ActivePad.selectedPad = SelectedPad.P1;
             } else
             {
                 P1Connected.Visibility = Visibility.Collapsed;
             }
 
-            if (!TwoControllersConnected && args.controller[1].info.connected)
+            if (!TwoControllersConnected && PxConnected[1])
             {
                 P2Connected.Visibility = Visibility.Visible;
-                ActivePad.selectedPad = ActivePad.SelectedPad.P2;
+                ActivePad.selectedPad = SelectedPad.P2;
             }
             else
             {
@@ -649,13 +639,7 @@ match P2 settings to P1 and configure both pads together?  (This won't affect pa
         return;
 
             // Set the current selection.
-            ConnectedPadList.SelectedItem = ActivePad.selectedPad switch
-            {
-                ActivePad.SelectedPad.P1 => ConnectedPadList_P1,
-                ActivePad.SelectedPad.P2 => ConnectedPadList_P2,
-                ActivePad.SelectedPad.Both => ConnectedPadList_Both,
-                _ => throw new NotImplementedException(),
-            };
+            ConnectedPadList.SelectedValue = ActivePad.selectedPad;
         }
 
         private void UpdateAdvancedValues_Click(object sender, RoutedEventArgs e)
