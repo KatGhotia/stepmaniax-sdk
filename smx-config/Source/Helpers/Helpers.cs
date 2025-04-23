@@ -5,9 +5,11 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Security;
+using System.Security.Cryptography;
 using System.Text;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Resources;
 using System.Windows.Threading;
 using SMXJSON;
@@ -41,22 +43,23 @@ namespace smx_config
         // Yield each connected pad which is currently active for configuration.
         public static IEnumerable<Tuple<int, SMX.SMXConfig>> ActivePads(LoadFromConfigDelegateArgs args)
         {
-            bool Pad1Connected = args.controller[0].info.connected;
-            bool Pad2Connected = args.controller[1].info.connected;
+            var padConnected = (from controller in args.controller select controller.info.connected).ToArray();
 
             // If both pads are connected and a single pad is selected, ignore the deselected pad.
-            if (Pad1Connected && Pad2Connected)
+            if (padConnected.All(ci => ci))
             {
-                if (selectedPad == SelectedPad.P1)
-                    Pad2Connected = false;
-                if (selectedPad == SelectedPad.P2)
-                    Pad1Connected = false;
+                padConnected[selectedPad switch
+                {
+                    SelectedPad.P1 => 1,
+                    SelectedPad.P2 => 0,
+                    SelectedPad.Both => throw new NotImplementedException(),
+                    _ => throw new NotImplementedException(),
+                }] = false;
             }
-
-            if (Pad1Connected)
-                yield return Tuple.Create(0, args.controller[0].config);
-            if (Pad2Connected)
-                yield return Tuple.Create(1, args.controller[1].config);
+            for (int i = 0; i < padConnected.Length; ++i) {
+                if (padConnected[i])
+                    yield return Tuple.Create(i, args.controller[i].config);
+            }
         }
 
         // We know the selected pads are synced if there are two active, and when refreshing a
@@ -326,8 +329,7 @@ namespace smx_config
         private static void LoadSavedAnimationType(int pad, SMX.SMX.LightsType type)
         {
             byte[] gif = ReadSavedAnimationType(pad, type);
-            string error;
-            SMX.SMX.LightsAnimation_Load(gif, pad, type, out error);
+            SMX.SMX.LightsAnimation_Load(gif, pad, type, out string error);
         }
 
         // Some broken antivirus software locks files when they're read.  This is horrifying and
@@ -818,8 +820,7 @@ namespace smx_config
                 // Use this panel's color.  If a panel isn't connected, we still need to run the
                 // loop below to insert data for the panel.
                 var color = new byte[9*3];
-                SMX.SMXConfig config;
-                if (SMX.SMX.GetConfig(pad, out config))
+                if (SMX.SMX.GetConfig(pad, out SMX.SMXConfig config))
                     color = config.stepColor;
                 for ( int iPanel = 0; iPanel < 9; ++iPanel )
                 {
