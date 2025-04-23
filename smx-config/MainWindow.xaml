@@ -19,6 +19,13 @@
                 <x:Type TypeName="SMX.SMX.SensorTestMode" />
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
+        <ObjectDataProvider MethodName="GetValues"
+            ObjectType="{x:Type clr:Enum}"
+            x:Key="PadsEnumValues">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="controls:SelectedPad" />
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
         <clr:String x:Key="HighPresetDescription" xml:space="preserve">Lighter steps will activate the arrows.
 Use if small children are having difficulty pressing the arrows.</clr:String>
         <clr:String x:Key="NormalPresetDescription" xml:space="preserve">This is the recommended setting.</clr:String>
@@ -1087,11 +1094,9 @@ instead of only panels with sensors.</TextBlock>
         <!-- A list of which pads are connected, overlapping the tab bar in the top right. -->
         <StackPanel x:Name="ConnectedPads" VerticalAlignment="Top" HorizontalAlignment="Right" Orientation="Horizontal">
             <Label Content="Connected:" FontSize="10"/>
-            <ComboBox x:Name="ConnectedPadList" SelectionChanged="ConnectedPadList_SelectionChanged">
-                <ComboBoxItem x:Name="ConnectedPadList_P1">Player 1</ComboBoxItem>
-                <ComboBoxItem x:Name="ConnectedPadList_P2">Player 2</ComboBoxItem>
-                <ComboBoxItem x:Name="ConnectedPadList_Both">Both</ComboBoxItem>
-            </ComboBox>
+            <ComboBox x:Name="ConnectedPadList" SelectionChanged="ConnectedPadList_SelectionChanged"
+                ItemsSource="{Binding Source={StaticResource PadsEnumValues}}"
+            />
             <Label x:Name="P1Connected" Style="{StaticResource EnabledIcon}" Content="P1" Margin="1,0,4,0" FontSize="10"/>
             <Label x:Name="P2Connected" Style="{StaticResource EnabledIcon}" Content="P2" Margin="0,0,4,0" FontSize="10"/>
         </StackPanel>

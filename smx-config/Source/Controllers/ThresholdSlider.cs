@@ -99,7 +99,7 @@ namespace smx_config
 
         private void Refresh(LoadFromConfigDelegateArgs args)
         {
-            int selectedPad = ActivePad.selectedPad == ActivePad.SelectedPad.P2 ? 1 : 0;
+            int selectedPad = ActivePad.selectedPad == SelectedPad.P2 ? 1 : 0;
             var controllerData = args.controller[selectedPad];
 
             if (SensorDisplay.GetHighestSensorFromActivatedSensors(controllerData, out int activePanel, out int activeSensor))

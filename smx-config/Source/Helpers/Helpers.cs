@@ -11,18 +11,22 @@ using System.Windows.Media;
 using System.Windows.Resources;
 using System.Windows.Threading;
 using SMXJSON;
+using static SMX.SMX;
 
 namespace smx_config
 {
+    public enum SelectedPad {
+        [DisplayString("Player 1")]
+        P1,
+        [DisplayString("Player 2")]
+        P2,
+        [DisplayString("Both")]
+        Both,
+    };
+
     // Track whether we're configuring one pad or both at once.
     static class ActivePad
     {
-        public enum SelectedPad {
-            P1,
-            P2,
-            Both,
-        };
-        
         // The actual pad selection.  This defaults to both, and doesn't change if
         // only one pad is selected.  We don't actually show "both" in the dropdown
         // unless two pads are connected, but the underlying setting remains.
