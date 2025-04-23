@@ -224,8 +224,7 @@ namespace smx_config
             slider.Maximum = def.UserMax;
             slider.MinimumDistance = def.MinRange;
 
-            int lower, upper;
-            GetValueFromConfig(config, out lower, out upper);
+            GetValueFromConfig(config, out int lower, out int upper);
 
             // Firmware versions before 4 allowed 0xFF to be used to disable a threshold.
             // This isn't used in newer firmwares.

@@ -174,9 +174,8 @@ namespace smx_config
         {
             // Apply the change and save it to the device.
             var pad = getPadNo();
-            SMX.SMXConfig config;
-            if (!SMX.SMX.GetConfig(pad, out config))
-        return;
+            if (!SMX.SMX.GetConfig(pad, out SMX.SMXConfig config))
+                return;
 
             // Light colors are 8-bit values, but we only use values between 0-170.  Higher values
             // don't make the panel noticeably brighter, and just draw more power.
@@ -193,8 +192,7 @@ namespace smx_config
         public override Color getColor()
         {
             int pad = getPadNo();
-            SMX.SMXConfig config;
-            if (!SMX.SMX.GetConfig(pad, out config))
+            if (!SMX.SMX.GetConfig(pad, out SMX.SMXConfig config))
                 return Color.FromRgb(0, 0, 0);
 
             int PanelIndex = Panel % 9;
@@ -230,8 +228,7 @@ namespace smx_config
         {
             // Apply the change and save it to the device.
             int pad = getPadNo();
-            SMX.SMXConfig config;
-            if (!SMX.SMX.GetConfig(pad, out config))
+            if (!SMX.SMX.GetConfig(pad, out SMX.SMXConfig config))
                 return;
 
             config.platformStripColor[0] = color.R;
@@ -276,10 +273,9 @@ namespace smx_config
             {
                 // Use this panel's color.  If a panel isn't connected, we still need to run the
                 // loop below to insert data for the panel.
-                byte[] color = new byte[3];
-                SMX.SMXConfig config;
-                if (SMX.SMX.GetConfig(pad, out config))
-                    color = config.platformStripColor;
+                byte[] color = SMX.SMX.GetConfig(pad, out SMX.SMXConfig config)
+                    ? config.platformStripColor
+                    : new byte[3];
                 for (int i = 0; i < 44; ++i)
                     cmd.Write(color);
             }
@@ -292,9 +288,8 @@ namespace smx_config
         public override Color getColor()
         {
             int pad = getPadNo();
-            SMX.SMXConfig config;
-            if (!SMX.SMX.GetConfig(pad, out config))
-        return Color.FromRgb(0, 0, 0);
+            if (!SMX.SMX.GetConfig(pad, out SMX.SMXConfig config))
+                return Color.FromRgb(0, 0, 0);
 
             return Color.FromRgb(config.platformStripColor[0], config.platformStripColor[1], config.platformStripColor[2]);
         }

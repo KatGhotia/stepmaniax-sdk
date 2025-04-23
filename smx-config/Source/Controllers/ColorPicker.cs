@@ -88,8 +88,7 @@ namespace smx_config
 
             // Reverse the scaling we applied in SaveToConfig.
             Color rgb = _colorButton.getColor();
-            double h, s, v;
-            Helpers.ToHSV(rgb, out h, out s, out v);
+            Helpers.ToHSV(rgb, out double h, out double s, out double v);
 
             // Check for white.  Since the conversion through LightsScaleFactor may not round trip
             // back to exactly #FFFFFF, give some room for error in the value (brightness).
