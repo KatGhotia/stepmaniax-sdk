@@ -592,7 +592,7 @@ namespace SMX
             if (!string.IsNullOrEmpty(source))
             {
                 m_modeBySource[source] = mode;
-                foreach(var kvp in m_modeBySource)
+                foreach (var kvp in m_modeBySource)
                 {
                     if (kvp.Key == source)
                 continue;

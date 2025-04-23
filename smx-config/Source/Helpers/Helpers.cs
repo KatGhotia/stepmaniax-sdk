@@ -5,11 +5,9 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Security;
-using System.Security.Cryptography;
 using System.Text;
 using System.Windows;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
 using System.Windows.Resources;
 using System.Windows.Threading;
 using SMXJSON;
@@ -103,6 +101,11 @@ namespace smx_config
         public static bool LaunchedOnStartup()
         {
             return HasCommandlineArgument("-s");
+        }
+        
+        public static bool NoClampOutput()
+        {
+            return HasCommandlineArgument("--noclamp");
         }
 
         // Return the last Win32 error as a string.
