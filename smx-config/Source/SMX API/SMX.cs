@@ -687,8 +687,7 @@ namespace SMX
             }
 
             error = "";
-            IntPtr error_pointer;
-            var result = SMX_LightsAnimation_Load(buf, buf.Length, pad, (int) type, out error_pointer);
+            var result = SMX_LightsAnimation_Load(buf, buf.Length, pad, (int)type, out IntPtr error_pointer);
             if (!result)
             {
                 // SMX_LightsAnimation_Load takes a char **error, which is set to the error

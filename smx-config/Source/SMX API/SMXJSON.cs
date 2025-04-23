@@ -58,8 +58,7 @@ namespace SMXJSON
         // type, return defaultValue.
         public static T Get<T>(this Dictionary<string, Object> dict, string key, T defaultValue)
         {
-            object value;
-            if (!dict.TryGetValue(key, out value))
+            if (!dict.TryGetValue(key, out object value))
                 return defaultValue;
 
             if (!typeof(T).IsAssignableFrom(value.GetType()))
@@ -72,8 +71,7 @@ namespace SMXJSON
         // true.  Otherwise, leave result unchanged and return false.
         public static bool GetValue<T>(this Dictionary<string, Object> dict, string key, ref T result)
         {
-            object value;
-            if (!dict.TryGetValue(key, out value))
+            if (!dict.TryGetValue(key, out object value))
                 return false;
 
             if (!typeof(T).IsAssignableFrom(result.GetType()))
@@ -563,9 +561,8 @@ namespace SMXJSON
                 }
             }
 
-            double result;
-            if (!Double.TryParse(number.ToString(), out result))
-        throw new ParseError(reader, $"Unexpected error parsing number \"{number.ToString()}\"");
+            if (!Double.TryParse(number.ToString(), out double result))
+                throw new ParseError(reader, $"Unexpected error parsing number \"{number.ToString()}\"");
 
             if (negative)
                 result = -result;

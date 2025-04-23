@@ -43,8 +43,7 @@ namespace smx_config
                     //Ensure that the tool set the sensor test to off before closing
                     SMX.SMX.SetSensorTestMode(pad, SMX.SMX.SensorTestMode.Off);
 
-                    SMX.SMXConfig config;
-                    if (!SMX.SMX.GetConfig(pad, out config))
+                    if (!SMX.SMX.GetConfig(pad, out SMX.SMXConfig config))
                         continue;
 
                     // If the firmware is version 4 or higher, it supports animations directly.
@@ -666,8 +665,7 @@ match P2 settings to P1 and configure both pads together?  (This won't affect pa
                 int pad = activePad.Item1;
 
                 // Load the animation.
-                string error;
-                if (!SMX.SMX.LightsAnimation_Load(buf, pad, type, out error))
+                if (!SMX.SMX.LightsAnimation_Load(buf, pad, type, out string error))
                 {
                     // Any errors here are problems with the GIF, so there's no point trying
                     // to load it for the second pad if the first returns an error.  Just show the
@@ -675,7 +673,7 @@ match P2 settings to P1 and configure both pads together?  (This won't affect pa
                     MessageBox.Show(error, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
 
                     // Return without saving to settings on error.
-        return;
+                    return;
                 }
 
                 // Save the GIF to disk so we can load it quickly later.
@@ -691,9 +689,8 @@ match P2 settings to P1 and configure both pads together?  (This won't affect pa
             {
                 int pad = activePad.Item1;
 
-                SMX.SMXConfig config;
-                if (!SMX.SMX.GetConfig(pad, out config))
-            continue;
+                if (!SMX.SMX.GetConfig(pad, out SMX.SMXConfig config))
+                    continue;
 
                 if (config.IsNewGen())
                     UploadLatestGIF();
