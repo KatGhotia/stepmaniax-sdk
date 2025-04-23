@@ -214,8 +214,8 @@ namespace smx_config
             if (SelectedPanel == null) {
                 Console.Error.WriteLine("No panel selected - refreshing not possible.");
             } else {
-                int SelectedPad = SelectedPanel < 9 ? 0 : 1;
-                int PanelIndex = (int)(SelectedPanel % 9);
+                int SelectedPad = SelectedPanel.Value < 9 ? 0 : 1;
+                int PanelIndex = SelectedPanel.Value % 9;
                 int dip = args.controller[SelectedPad].test_data.iDIPSwitchPerPanel[PanelIndex];
                 CurrentDIP.Frame = dip;
                 ExpectedDIP.Frame = PanelIndex;
@@ -263,8 +263,7 @@ namespace smx_config
                     }
                     else
                     {
-                        // FIXME: pucgenie: Should be a user-controlled setting (defaulting to true...)
-                        if (false) {
+                        if (!Helpers.NoClampOutput()) {
                             // Very slightly negative values happen due to noise.  They don't indicate a
                             // problem, but they're confusing in the UI, so clamp them away.
                             if (value < 0 && value >= -10)
