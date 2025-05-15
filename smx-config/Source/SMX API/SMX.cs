@@ -234,8 +234,10 @@ namespace SMX
             };
             for (int panel = 0; panel < 9; ++panel)
             {
-                result.panelSettings[panel].fsrLowThreshold = new Byte[4];
-                result.panelSettings[panel].fsrHighThreshold = new Byte[4];
+                // pucgenie: struct is a value type. class would have allowed us to use foreach.
+                ref var panelObj = ref result.panelSettings[panel];
+                panelObj.fsrLowThreshold = new Byte[4];
+                panelObj.fsrHighThreshold = new Byte[4];
             }
             return result;
         }
@@ -361,7 +363,7 @@ namespace SMX
         static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hReservedNull, LoadLibraryFlags dwFlags);
         [DllImport("SMX.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern void SMX_Start(
-            [MarshalAs(UnmanagedType.FunctionPtr)] InternalUpdateCallback callback,
+            [MarshalAs(UnmanagedType.FunctionPtr)] InternalUpdateCallback? callback,
             IntPtr user);
         [DllImport("SMX.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern void SMX_Stop();
@@ -452,7 +454,7 @@ namespace SMX
         // The C API allows a user pointer, but we don't use that here.
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate void InternalUpdateCallback(int PadNumber, int reason, IntPtr user);
-        private static InternalUpdateCallback CurrentUpdateCallback;
+        private static InternalUpdateCallback? CurrentUpdateCallback;
 
         public static void Start(UpdateCallback callback)
         {
@@ -469,10 +471,11 @@ namespace SMX
             }
 
             // Make a wrapper to convert from the native enum to SMXUpdateCallbackReason.
-            InternalUpdateCallback NewCallback = delegate(int PadNumber, int reason, IntPtr user) {
+            InternalUpdateCallback? NewCallback = delegate(int PadNumber, int reason, IntPtr user) {
                 SMXUpdateCallbackReason ReasonEnum = (SMXUpdateCallbackReason) Enum.ToObject(typeof(SMXUpdateCallbackReason), reason);
                 callback(PadNumber, ReasonEnum);
             };
+            // pucgenie: wtf?
             if (callback == null)
                 NewCallback = null;
 
@@ -545,16 +548,13 @@ namespace SMX
                 get { return value; }
             }
 
-            public string ResourceKey { get; set; }
+            public string? ResourceKey { get; set; }
 
             public DisplayStringAttribute(string v)
             {
                 this.value = v;
             }
 
-            public DisplayStringAttribute()
-            {
-            }
         }
 
         public enum SensorTestMode {
@@ -584,14 +584,14 @@ namespace SMX
         //Off Test1
         //Off Test2
 
-        public static void SetSensorTestMode(int pad, SensorTestMode mode, string source = null)
+        public static void SetSensorTestMode(int pad, SensorTestMode mode, string? source = null)
         {
             if (!DLLAvailable())
         return;
 
             if (!string.IsNullOrEmpty(source))
             {
-                m_modeBySource[source] = mode;
+                m_modeBySource[source!] = mode;
                 foreach (var kvp in m_modeBySource)
                 {
                     if (kvp.Key == source)

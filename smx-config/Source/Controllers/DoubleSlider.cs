@@ -90,13 +90,13 @@ namespace smx_config
             set { SetValue(UpperValueProperty, value); }
         }
 
-        private Thumb Middle;
+        private Thumb? Middle;
 
-        Thumb UpperThumb;
-        Thumb LowerThumb;
+        Thumb? UpperThumb;
+        Thumb? LowerThumb;
 
-        private RepeatButton DecreaseButton;
-        private RepeatButton IncreaseButton;
+        private RepeatButton? DecreaseButton;
+        private RepeatButton? IncreaseButton;
 
         protected override Size ArrangeOverride(Size arrangeSize)
         {

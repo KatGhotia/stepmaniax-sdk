@@ -49,30 +49,72 @@ namespace smx_config
             set { SetValue(AdvancedModeEnabledProperty, value); }
         }
 
-        DoubleSlider slider;
-        Label LowerLabel, UpperLabel;
+        DoubleSlider? slider;
+        Label? LowerLabel, UpperLabel;
         //Image ThresholdWarning;
-        PlatformSensorDisplay SensorDisplay;
-        LevelBar SensorBar;
+        PlatformSensorDisplay? SensorDisplay;
+        LevelBar? SensorBar;
 
-        OnConfigChange onConfigChange;
-        OnConfigChange onConfigInputChange;
+        OnConfigChange? onConfigChange;
+        OnConfigChange? onConfigInputChange;
+
+        private CurrentSMXDevice smxDevice;
+
+        public ThresholdSlider(CurrentSMXDevice smxDevice)
+        {
+            this.smxDevice = smxDevice;
+        }
 
         public override void OnApplyTemplate()
         {
             base.OnApplyTemplate();
 
-            slider = GetTemplateChild("Slider") as DoubleSlider;
-            LowerLabel = GetTemplateChild("LowerValue") as Label;
-            UpperLabel = GetTemplateChild("UpperValue") as Label;
+            slider = (GetTemplateChild("Slider") as DoubleSlider)!;
+            LowerLabel = (GetTemplateChild("LowerValue") as Label)!;
+            UpperLabel = (GetTemplateChild("UpperValue") as Label)!;
             //ThresholdWarning = GetTemplateChild("ThresholdWarning") as Image;
-            SensorDisplay = GetTemplateChild("PlatformSensorDisplay") as PlatformSensorDisplay;
-            SensorBar = GetTemplateChild("SensorBar") as LevelBar;
+            SensorDisplay = (GetTemplateChild("PlatformSensorDisplay") as PlatformSensorDisplay)!;
+            SensorBar = (GetTemplateChild("SensorBar") as LevelBar)!;
 
-            slider.ValueChanged += delegate (DoubleSlider slider) { SaveToConfig(); };
+            slider.ValueChanged += delegate (DoubleSlider slider)
+            {
+                //SaveToConfig();
+                if (UpdatingUI)
+        return;
+
+                // Apply the change and save it to the devices.
+                foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads(smxDevice.GetState()))
+                {
+                    int pad = activePad.Item1;
+                    SMX.SMXConfig config = activePad.Item2;
+
+                    //SetValueToConfig(ref config);
+                    List<ThresholdSettings.PanelAndSensor> panelAndSensors = GetControlledSensors(config, false);
+                    foreach (ThresholdSettings.PanelAndSensor panelAndSensor in panelAndSensors)
+                    {
+                        if (!config.isFSR())
+                        {
+                            byte lower = (byte)slider.LowerValue;
+                            byte upper = (byte)slider.UpperValue;
+                            config.panelSettings[panelAndSensor.panel].loadCellLowThreshold = lower;
+                            config.panelSettings[panelAndSensor.panel].loadCellHighThreshold = upper;
+                        }
+                        else
+                        {
+                            byte lower = (byte)slider.LowerValue;
+                            byte upper = (byte)slider.UpperValue;
+                            config.panelSettings[panelAndSensor.panel].fsrLowThreshold[panelAndSensor.sensor] = lower;
+                            config.panelSettings[panelAndSensor.panel].fsrHighThreshold[panelAndSensor.sensor] = upper;
+                        }
+                    }
+
+                    SMX.SMX.SetConfig(pad, config);
+                    smxDevice.FireConfigurationChanged(this);
+                }
+            };
 
             // Show the edit button for the custom-sensors slider.
-            Button EditCustomSensorsButton = GetTemplateChild("EditCustomSensorsButton") as Button;
+            var EditCustomSensorsButton = (GetTemplateChild("EditCustomSensorsButton") as Button)!;
             EditCustomSensorsButton.Visibility = Type == "custom-sensors" ? Visibility.Visible : Visibility.Hidden;
             EditCustomSensorsButton.Click += delegate (object sender, RoutedEventArgs e)
             {
@@ -83,52 +125,97 @@ namespace smx_config
                 dialog.ShowDialog();
             };
 
-            onConfigChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args) {
-                LoadUIFromConfig(ActivePad.GetFirstActivePadConfig(args));
-            });
+            onConfigChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args)
+            {
+                //LoadUIFromConfig();
+                var config = ActivePad.GetFirstActivePadConfig(args);
+                // Make sure SaveToConfig doesn't treat these as the user changing values.
+                UpdatingUI = true;
+
+                RefreshSliderActiveProperty();
+
+                // Set the range for the slider.
+                // 16-bit FSR thresholds.
+                // 8-bit load cell thresholds
+                SMXHelpers.ThresholdDefinition def = SMXHelpers.GetThresholdDefinition(config.isFSR());
+                slider.Minimum = def.UserMin;
+                slider.Maximum = def.UserMax;
+                slider.MinimumDistance = def.MinRange;
+
+                GetValueFromConfig(config, out int lower, out int upper);
+
+                // Firmware versions before 4 allowed 0xFF to be used to disable a threshold.
+                // This isn't used in newer firmwares.
+                if (!config.IsNewGen() && lower == 0xFF)
+                {
+                    LowerLabel.Content = "Off";
+                    UpperLabel.Content = "";
+                    SensorBar.LowerThreshold = 1;
+                    SensorBar.HigherThreshold = 1;
+                }
+                else
+                {
+                    slider.LowerValue = lower;
+                    slider.UpperValue = upper;
+                    LowerLabel.Content = lower.ToString();
+                    UpperLabel.Content = upper.ToString();
+                    SensorBar.LowerThreshold = (lower - def.RealMin) / (def.RealMax - def.RealMin);
+                    SensorBar.HigherThreshold = (upper - def.RealMin) / (def.RealMax - def.RealMin);
+                }
+
+
+                List<ThresholdSettings.PanelAndSensor> controlledSensors = GetControlledSensors(config, false);
+
+                // SensorDisplay shows which sensors we control.  If this sensor is enabled, show the
+                // sensors this sensor controls.
+                // 
+                // If we're disabled, the icon will be empty.  That looks
+                // weird, so in that case we show 
+                // Set the icon next to the slider to show which sensors we control.
+                List<ThresholdSettings.PanelAndSensor> defaultControlledSensors = GetControlledSensors(config, true);
+                SensorDisplay.SetFromPanelAndSensors(controlledSensors, defaultControlledSensors);
+
+                UpdatingUI = false;
+            }, smxDevice);
 
             onConfigInputChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args)
             {
-                Refresh(args);
-            })
+                //Refresh(args);
+                int selectedPad = ActivePad.selectedPad == SelectedPad.P2 ? 1 : 0;
+            var controllerData = args.controller[selectedPad];
+
+                if (SensorDisplay.GetHighestSensorFromActivatedSensors(controllerData, out int activePanel, out int activeSensor))
+                {
+                    SensorBar.Visibility = Visibility.Visible;
+                    if (!controllerData.test_data.HasSensorValid(activePanel, activeSensor))
+                    {
+                        SensorBar.Value = 0;
+                        return;
+                    }
+
+                    int sensorIndex = (activePanel * 4) + activeSensor;
+                    Int16 value = controllerData.test_data.sensorLevel[sensorIndex];
+
+                    if (value < 0)
+                        value = 0;
+
+                    // Scale differently depending on if this is an FSR panel or a load cell panel.
+                    bool isFSR = controllerData.config.isFSR();
+                    if (isFSR)
+                        value >>= 2;
+                    float maxValue = isFSR ? 250 : 500;
+                    SensorBar.Value = value / maxValue;
+                    SensorBar.PanelActive = controllerData.inputs[activePanel];
+                }
+                else
+                {
+                    SensorBar.Visibility = Visibility.Hidden;
+                }
+            }, smxDevice)
             {
                 RefreshOnTestDataChange = true,
                 RefreshOnInputChange = true
             };
-        }
-
-        private void Refresh(LoadFromConfigDelegateArgs args)
-        {
-            int selectedPad = ActivePad.selectedPad == SelectedPad.P2 ? 1 : 0;
-            var controllerData = args.controller[selectedPad];
-
-            if (SensorDisplay.GetHighestSensorFromActivatedSensors(controllerData, out int activePanel, out int activeSensor))
-            {
-                SensorBar.Visibility = Visibility.Visible;
-                if (!controllerData.test_data.HasSensorValid(activePanel, activeSensor))
-                {
-                    SensorBar.Value = 0;
-                    return;
-                }
-
-                int sensorIndex = (activePanel * 4) + activeSensor;
-                Int16 value = controllerData.test_data.sensorLevel[sensorIndex];
-
-                if (value < 0)
-                    value = 0;
-
-                // Scale differently depending on if this is an FSR panel or a load cell panel.
-                bool isFSR = controllerData.config.isFSR();
-                if (isFSR)
-                    value >>= 2;
-                float maxValue = isFSR ? 250 : 500;
-                SensorBar.Value = value / maxValue;
-                SensorBar.PanelActive = controllerData.inputs[activePanel];
-            }
-            else
-            {
-                SensorBar.Visibility = Visibility.Hidden;
-            }
         }
 
         private void RefreshSliderActiveProperty()
@@ -145,29 +232,6 @@ namespace smx_config
         private List<ThresholdSettings.PanelAndSensor> GetControlledSensors(SMX.SMXConfig config, bool includeOverridden)
         {
             return ThresholdSettings.GetControlledSensorsForSliderType(Type, config.HasAllPanels(), includeOverridden);
-        }
-
-
-        private void SetValueToConfig(ref SMX.SMXConfig config)
-        {
-            List<ThresholdSettings.PanelAndSensor> panelAndSensors = GetControlledSensors(config, false);
-            foreach (ThresholdSettings.PanelAndSensor panelAndSensor in panelAndSensors)
-            {
-                if (!config.isFSR())
-                {
-                    byte lower = (byte)slider.LowerValue;
-                    byte upper = (byte)slider.UpperValue;
-                    config.panelSettings[panelAndSensor.panel].loadCellLowThreshold = lower;
-                    config.panelSettings[panelAndSensor.panel].loadCellHighThreshold = upper;
-                }
-                else
-                {
-                    byte lower = (byte)slider.LowerValue;
-                    byte upper = (byte)slider.UpperValue;
-                    config.panelSettings[panelAndSensor.panel].fsrLowThreshold[panelAndSensor.sensor] = lower;
-                    config.panelSettings[panelAndSensor.panel].fsrHighThreshold[panelAndSensor.sensor] = upper;
-                }
-            }
         }
 
         private void GetValueFromConfig(SMX.SMXConfig config, out int lower, out int upper)
@@ -191,74 +255,7 @@ namespace smx_config
             }
         }
 
-        private void SaveToConfig()
-        {
-            if (UpdatingUI)
-                return;
-
-            // Apply the change and save it to the devices.
-            foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
-            {
-                int pad = activePad.Item1;
-                SMX.SMXConfig config = activePad.Item2;
-
-                SetValueToConfig(ref config);
-                SMX.SMX.SetConfig(pad, config);
-                CurrentSMXDevice.singleton.FireConfigurationChanged(this);
-            }
-        }
-
         bool UpdatingUI = false;
-        private void LoadUIFromConfig(SMX.SMXConfig config)
-    {
-            // Make sure SaveToConfig doesn't treat these as the user changing values.
-            UpdatingUI = true;
-
-            RefreshSliderActiveProperty();
-
-            // Set the range for the slider.
-            // 16-bit FSR thresholds.
-            // 8-bit load cell thresholds
-            SMXHelpers.ThresholdDefinition def = SMXHelpers.GetThresholdDefinition(config.isFSR());
-            slider.Minimum = def.UserMin;
-            slider.Maximum = def.UserMax;
-            slider.MinimumDistance = def.MinRange;
-
-            GetValueFromConfig(config, out int lower, out int upper);
-
-            // Firmware versions before 4 allowed 0xFF to be used to disable a threshold.
-            // This isn't used in newer firmwares.
-            if (!config.IsNewGen() && lower == 0xFF)
-            {
-                LowerLabel.Content = "Off";
-                UpperLabel.Content = "";
-                SensorBar.LowerThreshold = 1;
-                SensorBar.HigherThreshold = 1;
-            }
-            else
-            {
-                slider.LowerValue = lower;
-                slider.UpperValue = upper;
-                LowerLabel.Content = lower.ToString();
-                UpperLabel.Content = upper.ToString();
-                SensorBar.LowerThreshold = (lower - def.RealMin) / (def.RealMax - def.RealMin);
-                SensorBar.HigherThreshold = (upper - def.RealMin) / (def.RealMax - def.RealMin);
-            }
-
-
-            List<ThresholdSettings.PanelAndSensor> controlledSensors = GetControlledSensors(config, false);
-
-            // SensorDisplay shows which sensors we control.  If this sensor is enabled, show the
-            // sensors this sensor controls.
-            // 
-            // If we're disabled, the icon will be empty.  That looks
-            // weird, so in that case we show 
-            // Set the icon next to the slider to show which sensors we control.
-            List<ThresholdSettings.PanelAndSensor> defaultControlledSensors = GetControlledSensors(config, true);
-            SensorDisplay.SetFromPanelAndSensors(controlledSensors, defaultControlledSensors);
-
-            UpdatingUI = false;
-        }
     }
 
     // The checkbox next to the threshold slider to turn it on or off.  This is only used
@@ -274,6 +271,12 @@ namespace smx_config
             set { SetValue(TypeProperty, value); }
         }
 
+        private CurrentSMXDevice smxDevice;
+
+        public ThresholdEnabledButton(CurrentSMXDevice smxDevice) {
+            this.smxDevice = smxDevice;
+        }
+
         public override void OnApplyTemplate()
         {
             base.OnApplyTemplate();
@@ -285,38 +288,31 @@ namespace smx_config
             }
 
             OnConfigChange onConfigChange;
-            onConfigChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args) {
-                LoadFromSettings();
-            });
+            onConfigChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args)
+            {
+                //LoadFromSettings();
+                if (Type == "inner-sensors")
+                    IsChecked = Properties.Settings.Default.UseInnerSensorThresholds;
+                else if (Type == "outer-sensors")
+                    IsChecked = Properties.Settings.Default.UseOuterSensorThresholds;
+            }, smxDevice);
         }
 
         protected override void OnClick()
         {
             IsChecked = !IsChecked;
-            SaveToSettings();
-        }
-
-        private void LoadFromSettings()
-        {
+            //SaveToSettings();
             if (Type == "inner-sensors")
-                IsChecked = Properties.Settings.Default.UseInnerSensorThresholds;
+                Properties.Settings.Default.UseInnerSensorThresholds = IsChecked.GetValueOrDefault(false);
             else if (Type == "outer-sensors")
-                IsChecked = Properties.Settings.Default.UseOuterSensorThresholds;
-        }
-
-        private void SaveToSettings()
-        {
-            if (Type == "inner-sensors")
-                Properties.Settings.Default.UseInnerSensorThresholds = (bool)IsChecked;
-            else if (Type == "outer-sensors")
-                Properties.Settings.Default.UseOuterSensorThresholds = (bool)IsChecked;
+                Properties.Settings.Default.UseOuterSensorThresholds = IsChecked.GetValueOrDefault(false);
 
             Helpers.SaveApplicationSettings();
 
             // Sync thresholds after enabling or disabling a slider.
-            ThresholdSettings.SyncSliderThresholds();
+            ThresholdSettings.SyncSliderThresholds(smxDevice);
 
-            CurrentSMXDevice.singleton.FireConfigurationChanged(this);
+            smxDevice.FireConfigurationChanged(this);
         }
     }
 }

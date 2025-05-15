@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Resources;
 using System.Windows.Threading;
+using SMX;
 using SMXJSON;
 using static SMX.SMX;
 
@@ -33,13 +34,13 @@ namespace smx_config
         public static SelectedPad selectedPad = SelectedPad.Both;
 
         // A shortcut for when a LoadFromConfigDelegateArgs isn't available:
-        public static IEnumerable<Tuple<int, SMX.SMXConfig>> ActivePads()
+        public static IEnumerable<Tuple<int, SMX.SMXConfig>> ActivePads(CurrentSMXDevice? smxDevice)
         {
             // In case we're called in design mode, just return an empty list.
-            if (CurrentSMXDevice.singleton == null)
+            if (smxDevice == null)
         return new List<Tuple<int, SMX.SMXConfig>>();
 
-            return ActivePads(CurrentSMXDevice.singleton.GetState());
+            return ActivePads(smxDevice.GetState());
         }
 
         // Yield each connected pad which is currently active for configuration.
@@ -76,10 +77,6 @@ namespace smx_config
             return SMX.SMXConfig.Create();
         }
 
-        public static SMX.SMXConfig GetFirstActivePadConfig()
-        {
-            return GetFirstActivePadConfig(CurrentSMXDevice.singleton.GetState());
-        }
     }
 
     static class Helpers
@@ -422,7 +419,7 @@ namespace smx_config
 
         // Save and load the list of custom threshold sensors to settings.  These aren't saved to the pad, we
         // just keep them in application settings.
-        static List<PanelAndSensor> cachedCustomSensors;
+        static List<PanelAndSensor>? cachedCustomSensors;
         static public void SetCustomSensors(List<PanelAndSensor> panelAndSensors)
         {
             List<object> result = new();
@@ -488,7 +485,7 @@ namespace smx_config
         static public List<List<object>> GetCustomSensorsJSON()
         {
             try {
-        return SMXJSON.ParseJSON.Parse<List<List<object>>>(Properties.Settings.Default.CustomSensors);
+        return SMXJSON.ParseJSON.ParseDefault<List<List<object>>>(Properties.Settings.Default.CustomSensors);
             } catch (ParseError) {
                 // CustomSensors is empty by default.  We could test if it's empty, but as a more general
                 // safety, just catch any JSON errors in case something invalid is saved to it.
@@ -657,16 +654,16 @@ namespace smx_config
             }
         }
 
-        public static void SyncSliderThresholds()
+        public static void SyncSliderThresholds(CurrentSMXDevice smxDevice)
         {
-            foreach(Tuple<int,SMX.SMXConfig> activePad in ActivePad.ActivePads())
+            foreach(Tuple<int,SMX.SMXConfig> activePad in ActivePad.ActivePads(smxDevice.GetState()))
             {
                 SMX.SMXConfig config = activePad.Item2;
                 SyncSliderThresholdsForConfig(ref config);
                 SMX.SMX.SetConfig(activePad.Item1, config);
             }
 
-            CurrentSMXDevice.singleton.FireConfigurationChanged(null);
+            smxDevice.FireConfigurationChanged(null);
         }
 
         public static bool IsAdvancedModeRequired()
@@ -890,37 +887,38 @@ namespace smx_config
         // Import a saved JSON configuration to an SMXConfig.
         public static void ImportSettingsFromJSON(string json, ref SMX.SMXConfig config)
         {
-            var dict = SMXJSON.ParseJSON.Parse<Dictionary<string, Object>>(json);
+            var dict = SMXJSON.ParseJSON.ParseDefault<Dictionary<string, Object>>(json);
             // Read the thresholds.  If any values are missing, we'll leave the value in config alone.
             if (config.isFSR())
             {
-                List<Object> newPanelLowThresholds = dict.Get("fsrLowThresholds", new List<Object>());
-                List<Object> newPanelHighThresholds = dict.Get("fsrHighThresholds", new List<Object>());
-                for(int panel = 0; panel < 9; ++panel)
+                var newPanelLowThresholds = dict.Get("fsrLowThresholds", () => new List<Object>());
+                var newPanelHighThresholds = dict.Get("fsrHighThresholds", () => new List<Object>());
+                for (int panel = 0; panel < 9; ++panel)
                 {
-                    for(int sensor = 0; sensor < 4; ++sensor)
+                    ref var panelObj = ref config.panelSettings[panel];
+                    for (int sensor = 0; sensor < 4; ++sensor)
                     {
-                        config.panelSettings[panel].fsrLowThreshold[sensor] = (byte) newPanelLowThresholds.Get(panel, (int) config.panelSettings[panel].fsrLowThreshold[sensor]);
-                        config.panelSettings[panel].fsrHighThreshold[sensor] = (byte) newPanelHighThresholds.Get(panel, (int) config.panelSettings[panel].fsrHighThreshold[sensor]);
+                        panelObj.fsrLowThreshold[sensor] = (byte) newPanelLowThresholds.Get(panel, (int) panelObj.fsrLowThreshold[sensor]);
+                        panelObj.fsrHighThreshold[sensor] = (byte) newPanelHighThresholds.Get(panel, (int) panelObj.fsrHighThreshold[sensor]);
                     }
                 }
             }
             else
             {
-                var newPanelLowThresholds = dict.Get("panelLowThresholds", new List<Object>());
-                var newPanelHighThresholds = dict.Get("panelHighThresholds", new List<Object>());
+                var newPanelLowThresholds = dict.Get("panelLowThresholds", () => new List<Object>());
+                var newPanelHighThresholds = dict.Get("panelHighThresholds", () => new List<Object>());
                 for(int panel = 0; panel < 9; ++panel)
                 {
-                    config.panelSettings[panel].loadCellLowThreshold = newPanelLowThresholds.Get(panel, config.panelSettings[panel].loadCellLowThreshold);
-                    config.panelSettings[panel].loadCellHighThreshold = newPanelHighThresholds.Get(panel, config.panelSettings[panel].loadCellHighThreshold);
+                    ref var panelObj = ref config.panelSettings[panel];
+                    panelObj.loadCellLowThreshold = newPanelLowThresholds.Get(panel, panelObj.loadCellLowThreshold);
+                    panelObj.loadCellHighThreshold = newPanelHighThresholds.Get(panel, panelObj.loadCellHighThreshold);
                 }
             }
 
-            var enabledPanelList = dict.Get<List<Object>>("enabledPanels", null);
-            if (enabledPanelList != null)
+            if (dict.GetValue("enabledPanels", out List<Object>? enabledPanelList))
             {
                 bool[] enabledPanels = new bool[9];
-                for (int i = 0; i < enabledPanelList.Count; ++i)
+                for (int i = 0; i < enabledPanelList!.Count; ++i)
                 {
                     int panel = enabledPanelList.Get(i, 0);
 
@@ -932,14 +930,12 @@ namespace smx_config
                 config.SetEnabledPanels(enabledPanels);
             }
 
-            var panelColors = dict.Get<List<Object>>("panelColors", null);
-            if (panelColors != null)
+            if (dict.GetValue("panelColors", out List<Object>? panelColors))
             {
-                for(int PanelIndex = 0; PanelIndex < 9 && PanelIndex < panelColors.Count; ++PanelIndex)
+                for(int PanelIndex = 0; PanelIndex < 9 && PanelIndex < panelColors!.Count; ++PanelIndex)
                 {
-                    string colorString = panelColors.Get(PanelIndex, "#FFFFFF");
-                    Color color = Helpers.ParseColorString(colorString);
-                    color = Helpers.ScaleColor(color);
+                    var colorString = panelColors.Get(PanelIndex, "#FFFFFF");
+                    Color color = Helpers.ScaleColor(Helpers.ParseColorString(colorString));
 
                     config.stepColor[PanelIndex*3+0] = color.R;
                     config.stepColor[PanelIndex*3+1] = color.G;
@@ -947,11 +943,10 @@ namespace smx_config
                 }
             }
 
-            Properties.Settings.Default.UseOuterSensorThresholds = dict.Get<bool>("useOuterSensorThresholds", false);
-            Properties.Settings.Default.UseInnerSensorThresholds = dict.Get<bool>("useInnerSensorThresholds", false);
-            var customSensors = dict.Get<List<object>>("customSensors", null);
-            if (customSensors != null)
-                ThresholdSettings.SetCustomSensorsJSON(customSensors);
+            Properties.Settings.Default.UseOuterSensorThresholds = dict.Get<bool>("useOuterSensorThresholds", () => false);
+            Properties.Settings.Default.UseInnerSensorThresholds = dict.Get<bool>("useInnerSensorThresholds", () => false);
+            if (dict.GetValue("customSensors", out List<object>? customSensors))
+                ThresholdSettings.SetCustomSensorsJSON(customSensors!);
         }
 
         public struct ThresholdDefinition

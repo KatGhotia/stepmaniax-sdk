@@ -52,19 +52,17 @@ namespace smx_config
         }
 
         // The control that changed the configuration (passed to FireConfigurationChanged).
-        public object source;
+        public object? source;
     };
 
     // This class tracks the device we're currently configuring, and runs a callback when
     // it changes.
-    class CurrentSMXDevice
+    public class CurrentSMXDevice
     {
-        public static CurrentSMXDevice singleton;
-
         // This is fired when FireConfigurationChanged is called, and when the current device
         // changes.
         public delegate void ConfigurationChangedDelegate(LoadFromConfigDelegateArgs args);
-        public event ConfigurationChangedDelegate ConfigurationChanged;
+        public event ConfigurationChangedDelegate? ConfigurationChanged;
 
         private readonly bool[] WasConnected = new bool[2] { false, false };
         private readonly bool[][] LastInputs = new bool[2][];
@@ -98,9 +96,17 @@ namespace smx_config
             });
         }
 
+        private bool hasBeenStopped = false;
+
         public void Shutdown()
         {
+            if (hasBeenStopped)
+            {
+                Console.Error.WriteLine("Unexpected CurrentSMXDevice::Shutdown call (already shut down before)");
+                return;
+            }
             SMX.SMX.Stop();
+            hasBeenStopped = true;
         }
 
         private void CheckForChanges()
@@ -132,7 +138,7 @@ namespace smx_config
                     args.TestDataChanged = true;
                     LastTestData[pad] = controller.test_data;
                     // TODO: pucgenie: collect data for pressure statistics here?
-                    Console.Out.WriteLine($"{pad} {controller.test_data.sensorLevel.Max()}");
+                    Console.Out.WriteLine($"sensorLevel.max {pad} {controller.test_data.sensorLevel.Max()}");
                 }
             }
 
@@ -143,7 +149,7 @@ namespace smx_config
             }
         }
 
-        public void FireConfigurationChanged(object source)
+        public void FireConfigurationChanged(object? source)
         {
             LoadFromConfigDelegateArgs args = GetState();
             args.ConfigurationChanged = true;
@@ -211,22 +217,20 @@ namespace smx_config
         //
         // In addition, the callback is called when the control is Loaded, to load the initial
         // state.
-        public OnConfigChange(Control owner, LoadFromConfigDelegate callback)
+        public OnConfigChange(Control owner, LoadFromConfigDelegate callback, CurrentSMXDevice smxDevice)
         {
             Owner = owner;
             Callback = callback;
 
             Owner.Loaded += delegate(object sender, RoutedEventArgs e)
             {
-                if (CurrentSMXDevice.singleton != null)
-                    CurrentSMXDevice.singleton.ConfigurationChanged += ConfigurationChanged;
-                Refresh();
+                smxDevice.ConfigurationChanged += ConfigurationChanged;
+                Callback(smxDevice.GetState());
             };
 
             Owner.Unloaded += delegate(object sender, RoutedEventArgs e)
             {
-                if (CurrentSMXDevice.singleton != null)
-                    CurrentSMXDevice.singleton.ConfigurationChanged -= ConfigurationChanged;
+                smxDevice.ConfigurationChanged -= ConfigurationChanged;
             };
         }
 
@@ -240,11 +244,6 @@ namespace smx_config
             }
         }
 
-        private void Refresh()
-        {
-            if (CurrentSMXDevice.singleton != null)
-                Callback(CurrentSMXDevice.singleton.GetState());
-        }
     };
 
     public class OnInputChange
@@ -259,24 +258,24 @@ namespace smx_config
         //
         // In addition, the callback is called when the control is Loaded, to load the initial
         // state.
-        public OnInputChange(Control owner, LoadFromConfigDelegate callback)
+        public OnInputChange(Control owner, LoadFromConfigDelegate callback, CurrentSMXDevice? smxDevice)
         {
             Owner = owner;
             Callback = callback;
 
             // This is available when the application is running, but will be null in the XAML designer.
-            if (CurrentSMXDevice.singleton == null)
+            if (smxDevice == null)
         return;
 
             Owner.Loaded += delegate(object sender, RoutedEventArgs e)
             {
-                CurrentSMXDevice.singleton.ConfigurationChanged += ConfigurationChanged;
-                Refresh();
+                smxDevice.ConfigurationChanged += ConfigurationChanged;
+                Callback(smxDevice.GetState());
             };
 
             Owner.Unloaded += delegate(object sender, RoutedEventArgs e)
             {
-                CurrentSMXDevice.singleton.ConfigurationChanged -= ConfigurationChanged;
+                smxDevice.ConfigurationChanged -= ConfigurationChanged;
             };
         }
 
@@ -285,10 +284,5 @@ namespace smx_config
             Callback(args);
         }
 
-        private void Refresh()
-        {
-            if (CurrentSMXDevice.singleton != null)
-                Callback(CurrentSMXDevice.singleton.GetState());
-        }
     };
 }

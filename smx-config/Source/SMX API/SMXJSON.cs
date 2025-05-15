@@ -55,26 +55,30 @@ namespace SMXJSON
 
         // Return the value of key.  If it doesn't exist, or doesn't have the expected
         // type, return defaultValue.
-        public static T Get<T>(this Dictionary<string, Object> dict, string key, T defaultValue)
+        public static T Get<T>(this Dictionary<string, Object> dict, string key, Func<T> defaultValue)
         {
-            if (!dict.TryGetValue(key, out object value))
-                return defaultValue;
+            if (!dict.TryGetValue(key, out var value))
+                return defaultValue();
 
             if (!typeof(T).IsAssignableFrom(value.GetType()))
-                return defaultValue;
+                return defaultValue();
 
             return (T) value;
         }
 
         // Set result to the value of key if it exists and has the correct type, and return
         // true.  Otherwise, leave result unchanged and return false.
-        public static bool GetValue<T>(this Dictionary<string, Object> dict, string key, ref T result)
+        public static bool GetValue<T>(this Dictionary<string, Object> dict, string key, out T? result)
         {
-            if (!dict.TryGetValue(key, out object value))
+            if (!dict.TryGetValue(key, out var value)) {
+                result = default;
                 return false;
+            }
 
-            if (!typeof(T).IsAssignableFrom(result.GetType()))
+            if (!typeof(T).IsAssignableFrom(value.GetType())) {
+                result = default;
                 return false;
+            }
 
             result = (T) value;
             return true;
@@ -83,17 +87,17 @@ namespace SMXJSON
         // Our numbers are always doubles.  Add some other basic data types for convenience.
         public static int Get(this Dictionary<string, Object> dict, string key, int defaultValue)
         {
-            return (int) dict.Get(key, (double) defaultValue);
+            return (int) dict.Get(key, () => (double) defaultValue);
         }
 
         public static Byte Get(this Dictionary<string, Object> dict, string key, Byte defaultValue)
         {
-            return (Byte) dict.Get(key, (double) defaultValue);
+            return (Byte) dict.Get(key, () => (double) defaultValue);
         }
 
         public static float Get(this Dictionary<string, Object> dict, string key, float defaultValue)
         {
-            return (float) dict.Get(key, (double) defaultValue);
+            return (float) dict.Get(key, () => (double) defaultValue);
         }
     }
 
@@ -187,7 +191,7 @@ namespace SMXJSON
         }
         
         // Serialize an object based on its type.
-        static public void Serialize(object obj, StringBuilder output, int indent)
+        static public void Serialize(object? obj, StringBuilder output, int indent)
         {
             if (obj == null) {
                 output.Append("null");
@@ -296,19 +300,19 @@ namespace SMXJSON
         }
 
         // Parse JSON.  On error, return null.
-        public static Object Parse(string json)
+        public static T? Parse<T>(string json)
         {
-            return ParseWithExceptions(new StringReader(json));
+            return ParseWithExceptions<T>(new StringReader(json));
         }
 
         // Parse JSON, expecting a specific outer type.  On parse error, return a default value.
         // TODO: pucgenie: Why return a default value?! Exception!
-        public static T Parse<T>(string json) where T: new()
+        public static T ParseDefault<T>(string json) where T: new()
         {
-            Object result = Parse(json);
-            if (!typeof(T).IsAssignableFrom(result.GetType()))
+            T? result = Parse<T>(json);
+            if (result == null || !typeof(T).IsAssignableFrom(result.GetType()))
         return new T();
-            return (T) result;
+            return result;
         }
 
         // Parse JSON.  On error, raise JSONError.
@@ -316,9 +320,9 @@ namespace SMXJSON
         // Most of the time, errors aren't expected and putting exception handling around every
         // place JSON is parsed can be brittle.  Parse() can be used instead to just return
         // a default value.
-        public static Object ParseWithExceptions(StringReader reader)
+        public static T? ParseWithExceptions<T>(StringReader reader)
         {
-            var result = ParseJSONValue(reader);
+            var result = ParseJSONValue<T>(reader);
 
             SkipWhitespace(reader);
 
@@ -329,7 +333,7 @@ namespace SMXJSON
             return result;
         }
 
-        private static Object ParseJSONValue(StringReader reader)
+        private static T? ParseJSONValue<T>(StringReader reader)
         {
             SkipWhitespace(reader);
             int nextCharacter = reader.Peek();
@@ -338,15 +342,15 @@ namespace SMXJSON
             case '"': {
                 StringBuilder sb = new();
                 ReadJSONString(reader, sb);
-        return sb.ToString();
+        return (T?) (object?) sb.ToString();
             }
             case '{':
-        return ReadJSONDictionary(reader);
+        return (T?) (object?) ReadJSONDictionary(reader);
             case '[':
-        return ReadJSONArray(reader);
+        return (T?) (object?) ReadJSONArray(reader);
             }
             if (nextCharacter == '-' || (nextCharacter >= '0' && nextCharacter <= '9'))
-        return ReadJSONNumber(reader);
+        return (T?) (object?) ReadJSONNumber(reader);
 
             if (reader.Peek() == 'n')
             {
@@ -355,7 +359,7 @@ namespace SMXJSON
                 Expect(reader, 'u');
                 Expect(reader, 'l');
                 Expect(reader, 'l');
-        return null;
+        return default;
             }
 
             if (reader.Peek() == 't')
@@ -364,7 +368,7 @@ namespace SMXJSON
                 Expect(reader, 'r');
                 Expect(reader, 'u');
                 Expect(reader, 'e');
-        return true;
+        return (T?) (object?) true;
             }
 
             if (reader.Peek() == 'f')
@@ -374,7 +378,7 @@ namespace SMXJSON
                 Expect(reader, 'l');
                 Expect(reader, 's');
                 Expect(reader, 'e');
-        return true;
+        return (T?) (object?) true;
             }
 
             throw new ParseError(reader, "Unexpected token");
@@ -389,10 +393,10 @@ namespace SMXJSON
                 throw new ParseError(reader, $"Expected {character}");
         }
 
-        static private List<Object> ReadJSONArray(StringReader reader)
+        static private List<Object?> ReadJSONArray(StringReader reader)
         {
             Expect(reader, '[');
-            var result = new List<Object>();
+            var result = new List<Object?>();
             while (true)
             {
                 SkipWhitespace(reader);
@@ -412,14 +416,14 @@ namespace SMXJSON
                     SkipWhitespace(reader);
                 }
 
-                result.Add(ParseJSONValue(reader));
+                result.Add(ParseJSONValue<object>(reader));
             }
         }
-        static private Dictionary<string, Object> ReadJSONDictionary(StringReader reader)
+        static private Dictionary<string, Object?> ReadJSONDictionary(StringReader reader)
         {
             Expect(reader, '{');
 
-            var result = new Dictionary<string, Object>();
+            var result = new Dictionary<string, Object?>();
 
             StringBuilder sb = new();
             while (true)
@@ -428,7 +432,7 @@ namespace SMXJSON
                 string key = sb.ToString();
                 sb.Length = 0;
                 Expect(reader, ':');
-                Object value = ParseJSONValue(reader);
+                var value = ParseJSONValue<object>(reader);
                 result.Add(key, value);
 
                 SkipWhitespace(reader);

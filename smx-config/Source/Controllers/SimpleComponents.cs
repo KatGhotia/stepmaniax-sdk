@@ -22,33 +22,15 @@ namespace smx_config
     public class Slider2 : Slider
     {
         public delegate void DragEvent();
-        public event DragEvent StartedDragging, StoppedDragging;
-
-        protected Thumb Thumb;
+        public event DragEvent? StartedDragging, StoppedDragging;
 
         public override void OnApplyTemplate()
         {
             base.OnApplyTemplate();
 
-            Track track = Template.FindName("PART_Track", this) as Track;
-            Thumb = track.Thumb;
-        }
+            Track track = (Template.FindName("PART_Track", this) as Track)!;
+            var Thumb = track.Thumb;
 
-        // How are there no events for this?
-        protected override void OnThumbDragStarted(DragStartedEventArgs e)
-        {
-            base.OnThumbDragStarted(e);
-            StartedDragging?.Invoke();
-        }
-
-        protected override void OnThumbDragCompleted(DragCompletedEventArgs e)
-        {
-            base.OnThumbDragCompleted(e);
-            StoppedDragging?.Invoke();
-        }
-
-        public Slider2()
-        {
             // Fix the slider not dragging after clicking outside the thumb.
             // http://stackoverflow.com/a/30575638/136829
             bool clickedInSlider = false;
@@ -74,5 +56,19 @@ namespace smx_config
                 clickedInSlider = false;
             }), true);
         }
+
+        // How are there no events for this?
+        protected override void OnThumbDragStarted(DragStartedEventArgs e)
+        {
+            base.OnThumbDragStarted(e);
+            StartedDragging?.Invoke();
+        }
+
+        protected override void OnThumbDragCompleted(DragCompletedEventArgs e)
+        {
+            base.OnThumbDragCompleted(e);
+            StoppedDragging?.Invoke();
+        }
+
     };
 }

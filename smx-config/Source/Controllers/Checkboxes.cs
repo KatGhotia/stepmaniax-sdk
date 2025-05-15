@@ -14,15 +14,23 @@ namespace smx_config
             set { SetValue(LightAllPanelsProperty, value); }
         }
 
-        OnConfigChange onConfigChange;
+        OnConfigChange? onConfigChange;
+
+        private CurrentSMXDevice smxDevice;
+
+        public LightAllPanelsCheckbox(CurrentSMXDevice smxDevice)
+        {
+            this.smxDevice = smxDevice;
+        }
 
         public override void OnApplyTemplate()
         {
             base.OnApplyTemplate();
 
-            onConfigChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args) {
+            onConfigChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args)
+            {
                 LoadUIFromConfig(ActivePad.GetFirstActivePadConfig(args));
-            });
+            }, smxDevice);
         }
 
         private void LoadUIFromConfig(SMX.SMXConfig config)
@@ -33,14 +41,14 @@ namespace smx_config
         protected override void OnClick()
         {
             //SMX.SMXConfig firstConfig = ActivePad.GetFirstActivePadConfig();
-            foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
+            foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads(smxDevice.GetState()))
             {
                 int pad = activePad.Item1;
                 SMX.SMXConfig config = activePad.Item2;
                 config.setLightAllPanelsMode(!LightAllPanels);
                 SMX.SMX.SetConfig(pad, config);
             }
-            CurrentSMXDevice.singleton.FireConfigurationChanged(this);
+            smxDevice.FireConfigurationChanged(this);
 
             // Refresh the UI.
             //LoadUIFromConfig(firstConfig);
@@ -57,40 +65,43 @@ namespace smx_config
             set { SetValue(EnableSensorProperty, value); }
         }
 
-        OnConfigChange onConfigChange;
+        OnConfigChange? onConfigChange;
+
+        private CurrentSMXDevice smxDevice;
+
+        public EnableCenterTopSensorCheckbox(CurrentSMXDevice smxDevice)
+        {
+            this.smxDevice = smxDevice;
+        }
 
         public override void OnApplyTemplate()
         {
             base.OnApplyTemplate();
 
-            onConfigChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args) {
-                LoadUIFromConfig(ActivePad.GetFirstActivePadConfig(args));
-            });
-        }
-
-        private void LoadUIFromConfig(SMX.SMXConfig config)
-        {
-            // Center panel, top sensor:
-            bool enabled = config.panelSettings[4].fsrHighThreshold[2] < 255;
-            EnableSensor = enabled;
+            onConfigChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args)
+            {
+                //LoadUIFromConfig();
+                // Center panel, top sensor:
+                bool enabled = ActivePad.GetFirstActivePadConfig(args).panelSettings[4].fsrHighThreshold[2] < 255;
+                EnableSensor = enabled;
+            }, smxDevice);
         }
 
         protected override void OnClick()
         {
-            foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
+            foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads(smxDevice.GetState()))
             {
                 int pad = activePad.Item1;
                 SMX.SMXConfig config = activePad.Item2;
 
                 // Disable the sensor by setting its high threshold to 255, and enable it by syncing it up
                 // with the other thresholds.
-                if (!EnableSensor)
-                    config.panelSettings[4].fsrHighThreshold[2] = config.panelSettings[4].fsrHighThreshold[0];
-                else
-                    config.panelSettings[4].fsrHighThreshold[2] = 255;
+                config.panelSettings[4].fsrHighThreshold[2] = EnableSensor 
+                    ? byte.MaxValue
+                    : config.panelSettings[4].fsrHighThreshold[0];
                 SMX.SMX.SetConfig(pad, config);
             }
-            CurrentSMXDevice.singleton.FireConfigurationChanged(this);
+            smxDevice.FireConfigurationChanged(this);
         }
     }
 
@@ -105,7 +116,9 @@ namespace smx_config
         {
             base.OnClick();
 
-            SMX.SMX.SetPanelTestMode((bool)IsChecked ? SMX.SMX.PanelTestMode.PressureTest : SMX.SMX.PanelTestMode.Off);
+            SMX.SMX.SetPanelTestMode(IsChecked.GetValueOrDefault(false)
+                ? SMX.SMX.PanelTestMode.PressureTest
+                : SMX.SMX.PanelTestMode.Off);
         }
     }
 }

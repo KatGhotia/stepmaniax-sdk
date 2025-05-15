@@ -23,10 +23,11 @@
     <BootstrapperEnabled>true</BootstrapperEnabled>
     <AssemblyTitle>smx-config</AssemblyTitle>
     <Product>smx-config</Product>
-    <Copyright>© 2017</Copyright>
+    <Copyright>© 2017, 2025</Copyright>
     <UseWPF>true</UseWPF>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>10.0</LangVersion>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugType>full</DebugType>
@@ -37,6 +38,7 @@
     <OutputPath>bin\$(Configuration)\</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+  <!-- hmm https://stackoverflow.com/questions/79015828/solution-configuration-debug-any-cpu-in-vs-code -->
     <OutputPath>$(SolutionDir)\out\</OutputPath>
     <DebugType>full</DebugType>
     <!--CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet-->

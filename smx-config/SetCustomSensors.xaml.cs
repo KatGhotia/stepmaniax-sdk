@@ -23,17 +23,42 @@ namespace smx_config
         }
 
         readonly ToggleButton[] SensorSelectionButtons = new ToggleButton[4];
+
+        private CurrentSMXDevice smxDevice;
+
+        public SensorSelector(CurrentSMXDevice smxDevice)
+        {
+            this.smxDevice = smxDevice;
+        }
+
         public override void OnApplyTemplate()
         {
             base.OnApplyTemplate();
 
-            for (int sensor = 0; sensor < 4; ++sensor)
+            for (int sensor_i = 0; sensor_i < 4; ++sensor_i)
             {
-                int ThisSensor = sensor; // bind
-                SensorSelectionButtons[sensor] = GetTemplateChild($"Sensor{sensor}") as ToggleButton;
-                SensorSelectionButtons[sensor].Click += delegate(object sender, RoutedEventArgs e)
+                int sensor = sensor_i; // bind
+                // pucgenie: programming error if null is encountered here
+                var _toggleButton = (GetTemplateChild($"Sensor{sensor}") as ToggleButton)!;
+                SensorSelectionButtons[sensor] = _toggleButton;
+                _toggleButton.Click += delegate (object sender, RoutedEventArgs e)
                 {
-                    ClickedSensorButton(ThisSensor);
+                    //ClickedSensorButton(ThisSensor);
+                    // Toggle the clicked sensor.
+                    Console.WriteLine($"Clicked sensor {sensor}");
+                    List<ThresholdSettings.PanelAndSensor> customSensors = ThresholdSettings.GetCustomSensors();
+
+                    ThresholdSettings.PanelAndSensor customSensor = new(Panel, sensor);
+                    if (!IsSensorEnabled(customSensors, sensor))
+                        customSensors.Add(customSensor);
+                    else
+                        customSensors.Remove(customSensor);
+                    ThresholdSettings.SetCustomSensors(customSensors);
+
+                    // Sync thresholds after changing custom sensors.
+                    ThresholdSettings.SyncSliderThresholds(smxDevice);
+
+                    smxDevice.FireConfigurationChanged(this);
                 };
             }
 
@@ -41,28 +66,10 @@ namespace smx_config
             // we treat changes to this as config changes, so we can use the same OnConfigChange
             // method for updating.
             OnConfigChange onConfigChange;
-            onConfigChange = new OnConfigChange(this, delegate(LoadFromConfigDelegateArgs args) {
+            onConfigChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args)
+            {
                 LoadUIFromConfig(args);
-            });
-        }
-
-        private void ClickedSensorButton(int sensor)
-        {
-            // Toggle the clicked sensor.
-            Console.WriteLine($"Clicked sensor {sensor}");
-            List<ThresholdSettings.PanelAndSensor> customSensors = ThresholdSettings.GetCustomSensors();
-            bool enabled = !IsSensorEnabled(customSensors, sensor);
-
-            if (enabled)
-                customSensors.Add(new ThresholdSettings.PanelAndSensor(Panel, sensor));
-            else
-                customSensors.Remove(new ThresholdSettings.PanelAndSensor(Panel, sensor));
-            ThresholdSettings.SetCustomSensors(customSensors);
-
-            // Sync thresholds after changing custom sensors.
-            ThresholdSettings.SyncSliderThresholds();
-
-            CurrentSMXDevice.singleton.FireConfigurationChanged(this);
+            }, smxDevice);
         }
 
         // Return true if the given sensor is included in custom-sensors.

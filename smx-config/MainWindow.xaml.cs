@@ -13,18 +13,21 @@ namespace smx_config
     {
         //To be changed on each release
         private const int TOOL_REVISION = 1;
+
+        CurrentSMXDevice smxDevice;
         
         OnConfigChange onConfigChange;
-        ShowAutoLightsColor showAutoLightsColor = new();
+        readonly ShowAutoLightsColor showAutoLightsColor = new();
 
-        public MainWindow()
+        public MainWindow(CurrentSMXDevice smxDevice)
         {
+            this.smxDevice = smxDevice;
             InitializeComponent();
 
              onConfigChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args)
             {
                 LoadUIFromConfig(args);
-            });
+            }, smxDevice);
 
             // If we're controlling GIF animations and the firmware doesn't support
             // doing animations internally, confirm exiting, since you can minimize
@@ -33,7 +36,7 @@ namespace smx_config
             // with a prompt.
             Closing += delegate (object sender, System.ComponentModel.CancelEventArgs e)
             {
-                LoadFromConfigDelegateArgs args = CurrentSMXDevice.singleton.GetState();
+                LoadFromConfigDelegateArgs args = smxDevice.GetState();
 
                 // Don't use ActivePads here.  Even if P1 is selected for configuration,
                 // we can still be controlling animations for P2, so check both connected
@@ -80,7 +83,7 @@ GIF animations will keep playing if the application is minimized.",
 
         bool IsThresholdSliderShown(string type)
         {
-            SMX.SMXConfig config = ActivePad.GetFirstActivePadConfig();
+            SMX.SMXConfig config = ActivePad.GetFirstActivePadConfig(smxDevice.GetState());
             bool[] enabledPanels = config.GetEnabledPanels();
 
             // Check the list of sensors this slider controls.  If the list is empty, don't show it.
@@ -131,7 +134,7 @@ GIF animations will keep playing if the application is minimized.",
                 if (!IsThresholdSliderShown(sliderName))
             continue;
 
-                ThresholdSlider slider = new()
+                ThresholdSlider slider = new(smxDevice)
                 {
                     Type = sliderName
                 };
@@ -140,7 +143,7 @@ GIF animations will keep playing if the application is minimized.",
                 ThresholdSliderContainer.Children.Add(slider);
             }
 
-            ThresholdSettings.SyncSliderThresholds();
+            ThresholdSettings.SyncSliderThresholds(smxDevice);
         }
 
         public override void OnApplyTemplate()
@@ -173,6 +176,8 @@ GIF animations will keep playing if the application is minimized.",
 
             SetAllPanelsToCurrentColor.Click += delegate (object sender, RoutedEventArgs e)
             {
+                if (selectedButton == null)
+            return;
                 // Get the color of the selected color button, and apply it to all other buttons.
                 Color color = selectedButton.getColor();
 
@@ -186,16 +191,15 @@ GIF animations will keep playing if the application is minimized.",
                     button.setColor(color);
                 }
 
-                CurrentSMXDevice.singleton.FireConfigurationChanged(null);
+                smxDevice.FireConfigurationChanged(null);
             };
 
             // Listen to clicks on the panel color buttons.
-            ColorButton[] buttons = getColorPickerButtons();
-            foreach(ColorButton button in buttons)
+            foreach(ColorButton button in getColorPickerButtons())
             {
                 button.Click += delegate (object sender, RoutedEventArgs e)
                 {
-                    ColorButton clickedButton = sender as ColorButton;
+                    var clickedButton = sender as ColorButton;
                     selectedButton = clickedButton;
 
                     RefreshSelectedColorPicker();
@@ -221,7 +225,7 @@ GIF animations will keep playing if the application is minimized.",
             // The user pressed either the "panel colors" or "GIF animations" button.
             bool pressedPanelColors = sender == PanelColorsButton;
 
-            foreach(Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
+            foreach(Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads(smxDevice))
             {
                 SMX.SMXConfig config = activePad.Item2;
 
@@ -234,13 +238,13 @@ GIF animations will keep playing if the application is minimized.",
                 SMX.SMX.SetConfig(activePad.Item1, config);
             }
 
-            CurrentSMXDevice.singleton.FireConfigurationChanged(null);
+            smxDevice.FireConfigurationChanged(null);
         }
 
         private void LoadUIFromConfig(LoadFromConfigDelegateArgs args)
         {
             // Refresh whether LightsAnimation_SetAuto should be enabled.
-            SMX.SMXConfig firstConfig = ActivePad.GetFirstActivePadConfig();
+            SMX.SMXConfig firstConfig = ActivePad.GetFirstActivePadConfig(smxDevice.GetState());
             bool usePressedAnimationsEnabled = (firstConfig.configFlags & SMX.SMXConfigFlags.AutoLightingUsePressedAnimations) != 0;
             SMX.SMX.LightsAnimation_SetAuto(usePressedAnimationsEnabled);
 
@@ -266,7 +270,7 @@ GIF animations will keep playing if the application is minimized.",
 
             // Show the color slider or GIF UI depending on which one is set in flags.
             // If both pads are turned on, just use the first one.
-            foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
+            foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads(smxDevice.GetState()))
             {
                 SMX.SMXConfig config = activePad.Item2;
 
@@ -299,7 +303,7 @@ GIF animations will keep playing if the application is minimized.",
                 CheckConfiguringBothPads(args);
         }
 
-        ColorButton selectedButton;
+        ColorButton? selectedButton;
 
         // Return all color picker buttons.
         ColorButton[] getColorPickerButtons()
@@ -320,7 +324,7 @@ GIF animations will keep playing if the application is minimized.",
         // Update the selected color picker based on the value of selectedButton.
         private void RefreshSelectedColorPicker()
         {
-            LoadFromConfigDelegateArgs args = CurrentSMXDevice.singleton.GetState();
+            LoadFromConfigDelegateArgs args = smxDevice.GetState();
 
             ColorButton[] buttons = getColorPickerButtons();
 
@@ -349,7 +353,7 @@ GIF animations will keep playing if the application is minimized.",
         // Update which of the "Leave this application running", etc. blocks to display.
         private void RefreshUploadPadText(LoadFromConfigDelegateArgs args)
         {
-            foreach(Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
+            foreach(Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads(smxDevice.GetState()))
             {
                 SMX.SMXConfig config = activePad.Item2;
 
@@ -364,15 +368,15 @@ GIF animations will keep playing if the application is minimized.",
             var newSelection = (ConnectedPadList.SelectedValue as SelectedPad?).Value;
             
             if (ActivePad.selectedPad == newSelection)
-                return;
+        return;
 
             ActivePad.selectedPad = newSelection;
 
             // Before firing and updating UI, run CheckConfiguringBothPads to see if we should
             // sync the config and/or change the selection again.
-            CheckConfiguringBothPads(CurrentSMXDevice.singleton.GetState());
+            CheckConfiguringBothPads(smxDevice.GetState());
 
-            CurrentSMXDevice.singleton.FireConfigurationChanged(null);
+            smxDevice.FireConfigurationChanged(null);
         }
 
         // If the user selects "Both", or connects a second pad while on "Both", both pads need
@@ -408,7 +412,7 @@ match P2 settings to P1 and configure both pads together?  (This won't affect pa
             {
                 // Switch to P1.
                 ActivePad.selectedPad = SelectedPad.P1;
-                RefreshConnectedPadList(CurrentSMXDevice.singleton.GetState());
+                RefreshConnectedPadList(smxDevice.GetState());
             }
 
         }
@@ -437,7 +441,7 @@ match P2 settings to P1 and configure both pads together?  (This won't affect pa
             config2.SetLowThresholds(config1.GetLowThresholds());
             config2.SetHighThresholds(config1.GetHighThresholds());
             SMX.SMX.SetConfig(1, config2);
-            CurrentSMXDevice.singleton.FireConfigurationChanged(null);
+            smxDevice.FireConfigurationChanged(null);
         }
 
         // Refresh which items are visible in the connected pads list, and which item is displayed as selected.
@@ -480,12 +484,12 @@ match P2 settings to P1 and configure both pads together?  (This won't affect pa
 
         private void UpdateAdvancedValues_Click(object sender, RoutedEventArgs e)
         {
-            foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
+            foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads(smxDevice.GetState()))
             {
                 int pad = activePad.Item1;
                 SMX.SMXConfig config = activePad.Item2;
 
-                string error = null;
+                string? error = null;
                 config.debounceNodelayMilliseconds = TryParseShortTextData(DebounceNodelayBox, "Debounce Nodelay", ref error);
                 config.debounceDelayMs = TryParseShortTextData(DebounceDelayBox, "Debounce Delay", ref error);
                 config.panelDebounceMicroseconds = TryParseShortTextData(PanelDebounceBox, "Panel Debounce", ref error);
@@ -498,7 +502,7 @@ match P2 settings to P1 and configure both pads together?  (This won't affect pa
                 if (!string.IsNullOrEmpty(error))
                 {
                     AdvancedValueError.Text = error;
-                    AdvancedValueError.Foreground = (SolidColorBrush)(new BrushConverter().ConvertFrom("#AA0000"));
+                    AdvancedValueError.Foreground = (SolidColorBrush)new BrushConverter().ConvertFrom("#AA0000");
                 }
                 else
                 {
@@ -507,10 +511,10 @@ match P2 settings to P1 and configure both pads together?  (This won't affect pa
                     AdvancedValueError.Foreground = (SolidColorBrush)(new BrushConverter().ConvertFrom("#00AA00"));
                 }
             }
-            CurrentSMXDevice.singleton.FireConfigurationChanged(null);
+            smxDevice.FireConfigurationChanged(null);
         }
 
-        private ushort TryParseShortTextData(TextBox box, string title, ref string error)
+        private ushort TryParseShortTextData(TextBox box, string title, ref string? error)
         {
             //An error already occured
             if (!string.IsNullOrEmpty(error))
@@ -523,7 +527,7 @@ match P2 settings to P1 and configure both pads together?  (This won't affect pa
             return default;
         }
 
-        private byte TryParseByteTextData(TextBox box, string title, ref string error)
+        private byte TryParseByteTextData(TextBox box, string title, ref string? error)
         {
             //An error already occured
             if (!string.IsNullOrEmpty(error))
@@ -538,7 +542,7 @@ match P2 settings to P1 and configure both pads together?  (This won't affect pa
 
         private void AutoCalibButton_Click(object sender, RoutedEventArgs e)
         {
-            foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
+            foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads(smxDevice.GetState()))
             {
                 int pad = activePad.Item1;
                 SMX.SMXConfig config = activePad.Item2;
@@ -546,17 +550,17 @@ match P2 settings to P1 and configure both pads together?  (This won't affect pa
                 config.autoCalibrationMaxTare = config.autoCalibrationMaxTare == 16 ? ushort.MaxValue : (ushort)16;
                 SMX.SMX.SetConfig(pad, config);
             }
-            CurrentSMXDevice.singleton.FireConfigurationChanged(null);
+            smxDevice.FireConfigurationChanged(null);
         }
 
         private void FactoryReset_Click(object sender, RoutedEventArgs e)
         {
-            foreach(Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
+            foreach(Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads(smxDevice.GetState()))
             {
                 int pad = activePad.Item1;
                 SMX.SMX.FactoryReset(pad);
             }
-            CurrentSMXDevice.singleton.FireConfigurationChanged(null);
+            smxDevice.FireConfigurationChanged(null);
         }
 
         private void AdvancedModeEnabledCheckbox_Changed(object sender, RoutedEventArgs e)
@@ -568,7 +572,7 @@ match P2 settings to P1 and configure both pads together?  (This won't affect pa
         {
             StringBuilder sb = new();
             // Save the current thresholds on the first available pad as a preset.
-            foreach(Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
+            foreach(Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads(smxDevice.GetState()))
             {
                 int pad = activePad.Item1;
                 SMX.SMXConfig config = activePad.Item2;
@@ -607,7 +611,7 @@ match P2 settings to P1 and configure both pads together?  (This won't affect pa
             string json = System.IO.File.ReadAllText(dialog.FileName);
 
             // Apply settings from the file to all active pads.
-            foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
+            foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads(smxDevice.GetState()))
             {
                 int pad = activePad.Item1;
                 SMX.SMXConfig config = activePad.Item2;
@@ -615,13 +619,13 @@ match P2 settings to P1 and configure both pads together?  (This won't affect pa
                 try {
                     SMXHelpers.ImportSettingsFromJSON(json, ref config);
                 } catch (SMXJSON.ParseError e2) {
-                    MessageBox.Show(e2.Message, "Error importing configuration", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show(e2.Message, $"Error importing configuration, pad {pad+1}", MessageBoxButton.OK, MessageBoxImage.Warning);
             break;
                 }
                 SMX.SMX.SetConfig(pad, config);
             }
 
-            CurrentSMXDevice.singleton.FireConfigurationChanged(null);
+            smxDevice.FireConfigurationChanged(null);
         }
 
         private void LoadGIF(object sender, RoutedEventArgs e)
@@ -644,7 +648,8 @@ match P2 settings to P1 and configure both pads together?  (This won't affect pa
             byte[] buf = System.IO.File.ReadAllBytes(dialog.FileName);
             SMX.SMX.LightsType type = pressed ? SMX.SMX.LightsType.LightsType_Pressed : SMX.SMX.LightsType.LightsType_Released;
 
-            foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
+            var activePads = ActivePad.ActivePads(smxDevice.GetState());
+            foreach (Tuple<int, SMX.SMXConfig> activePad in activePads)
             {
                 int pad = activePad.Item1;
 
@@ -657,24 +662,24 @@ match P2 settings to P1 and configure both pads together?  (This won't affect pa
                     MessageBox.Show(error, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
 
                     // Return without saving to settings on error.
-                    return;
+        return;
                 }
 
                 // Save the GIF to disk so we can load it quickly later.
                 Helpers.SaveAnimationToDisk(pad, type, buf);
 
                 // Refresh after loading a GIF to update the "Leave this application running" text.
-                CurrentSMXDevice.singleton.FireConfigurationChanged(null);
+                smxDevice.FireConfigurationChanged(null);
             }
 
             // For firmwares that support it, upload the animation to the pad now.  Otherwise,
             // we'll run the animation directly.
-            foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
+            foreach (Tuple<int, SMX.SMXConfig> activePad in activePads)
             {
                 int pad = activePad.Item1;
 
                 if (!SMX.SMX.GetConfig(pad, out SMX.SMXConfig config))
-                    continue;
+        continue;
 
                 if (config.IsNewGen())
                     UploadLatestGIF();
@@ -697,7 +702,7 @@ match P2 settings to P1 and configure both pads together?  (This won't affect pa
             // we can start both of these simultaneously, and they'll be sent in
             // parallel.
             int total = 0;
-            foreach (Tuple<int,SMX.SMXConfig> activePad in ActivePad.ActivePads())
+            foreach (Tuple<int,SMX.SMXConfig> activePad in ActivePad.ActivePads(smxDevice))
             {
                 int pad = activePad.Item1;
                 SMX.SMX.LightsUpload_BeginUpload(pad, delegate(int progress) {

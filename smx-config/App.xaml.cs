@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Resources;
 
 namespace smx_config
 {
@@ -16,7 +17,7 @@ namespace smx_config
         public static extern bool AllocConsole();
 
         private System.Windows.Forms.NotifyIcon trayIcon = new();
-        private MainWindow window;
+        private MainWindow? window;
 
         App()
         {
@@ -75,12 +76,32 @@ namespace smx_config
             if (Helpers.GetDebug())
                 SMX_Internal_OpenConsole();
 
-            CurrentSMXDevice.singleton = new CurrentSMXDevice();
+            smxDevice = new CurrentSMXDevice();
 
             // Load animations.
             Helpers.LoadSavedPanelAnimations();
 
-            CreateTrayIcon();
+            //CreateTrayIcon();
+            // Create a tray icon.  For some reason there's no WPF interface for this,
+            // so we have to use Forms.
+            var icon = new System.Drawing.Icon(GetResourceStream(
+                    new Uri("pack://application:,,,/Resources/window%20icon%20grey.ico")
+                ).Stream);
+
+            trayIcon.Text = "StepManiaX";
+            trayIcon.Visible = true;
+
+            // Show or hide the application window on click.
+            // pucgenie: On double-click only (but what about Touch input?)
+            //trayIcon.Click += delegate (object sender, EventArgs e) { ToggleMainWindow();  };
+            trayIcon.DoubleClick += delegate (object sender, EventArgs e) { ToggleMainWindow();  };
+
+            smxDevice.ConfigurationChanged += delegate(LoadFromConfigDelegateArgs args) {
+                RefreshTrayIcon(args);
+            };
+
+            // Do the initial refresh.
+            RefreshTrayIcon(smxDevice.GetState(), true);
 
             // Create the main window.
             if (!Helpers.LaunchedOnStartup())
@@ -98,11 +119,11 @@ namespace smx_config
         {
             if (window == null)
             {
-                window = new MainWindow();
+                window = new MainWindow(smxDevice!);
                 window.Closed += MainWindowClosed;
                 window.Show();
             }
-            else if (IsMinimizedToTray())
+            else if ((bool)IsMinimizedToTray()!)
             {
                 window.Visibility = Visibility.Visible;
                 window.Activate();
@@ -113,13 +134,16 @@ namespace smx_config
             }
         }
 
-        public bool IsMinimizedToTray()
+        public bool? IsMinimizedToTray()
         {
-            return window.Visibility == Visibility.Collapsed;
+            return window == null ? null : (window.Visibility == Visibility.Collapsed);
         }
 
         public void MinimizeToTray()
         {
+            if (window == null) {
+                throw new Exception("window has to be initialized before");
+            }
             // Just hide the window.  Don't actually set the window to minimized, since it
             // won't do anything and it causes problems when restoring the window.
             window.Visibility = Visibility.Collapsed;
@@ -128,11 +152,11 @@ namespace smx_config
         public void BringToForeground()
         {
             // Restore or create the window.  Don't minimize if we're already restored.
-            if (window == null || IsMinimizedToTray())
+            if (IsMinimizedToTray() ?? true)
                 ToggleMainWindow();
 
             // Focus the window.
-            window.WindowState = WindowState.Normal;
+            window!.WindowState = WindowState.Normal;
             window.Activate();
         }
 
@@ -153,19 +177,11 @@ namespace smx_config
 
             Console.Error.WriteLine("Application exiting");
 
-            // Remove the tray icon.
-            if (trayIcon != null)
-            {
-                trayIcon.Visible = false;
-                trayIcon = null;
-            }
+            // Remove the tray icon. Always exists as soon as an object of this class is initialized.
+            trayIcon.Visible = false;
 
             // Shut down cleanly, to make sure we don't run any threaded callbacks during shutdown.
-            if (CurrentSMXDevice.singleton != null)
-            {
-                CurrentSMXDevice.singleton.Shutdown();
-                CurrentSMXDevice.singleton = null;
-            }
+            smxDevice!.Shutdown();
         }
 
         // If another instance other than this one is running, send it WM_USER to tell it to
@@ -215,39 +231,12 @@ namespace smx_config
             }));
         }
 
-        // Create a tray icon.  For some reason there's no WPF interface for this,
-        // so we have to use Forms.
-        void CreateTrayIcon()
-        {
-            var icon = new System.Drawing.Icon(GetResourceStream(
-                    new Uri("pack://application:,,,/Resources/window%20icon%20grey.ico")
-                ).Stream);
-
-            trayIcon.Text = "StepManiaX";
-            trayIcon.Visible = true;
-
-            // Show or hide the application window on click.
-            // pucgenie: On double-click only (but what about Touch input?)
-            //trayIcon.Click += delegate (object sender, EventArgs e) { ToggleMainWindow();  };
-            trayIcon.DoubleClick += delegate (object sender, EventArgs e) { ToggleMainWindow();  };
-
-            CurrentSMXDevice.singleton.ConfigurationChanged += delegate(LoadFromConfigDelegateArgs args) {
-                RefreshTrayIcon(args);
-            };
-
-            // Do the initial refresh.
-            RefreshTrayIcon(CurrentSMXDevice.singleton.GetState(), true);
-        }
-
         // Refresh the tray icon when we're connected or disconnected.
         byte wasConnected = 0;
+        private CurrentSMXDevice? smxDevice;
+
         void RefreshTrayIcon(LoadFromConfigDelegateArgs args, bool force=false)
         {
-            if (trayIcon == null) {
-                Console.Error.WriteLine("Unexpected trayIcon state (null)");
-        return;
-            }
-
             var ConnectedCount = 0;
             for (int pad = 0; pad < args.controller.Length; ++pad)
                 if (args.controller[pad].info.connected)
@@ -262,11 +251,8 @@ namespace smx_config
 
             // Set the tray icon.
             // TODO: pucgenie: Icons for every constellation (at least: 0, 1., 1.+2.)
-            var filename = ConnectedCount > 0 
-                ? "window%20icon.ico"
-                : "window%20icon%20grey.ico";
             trayIcon.Icon = new System.Drawing.Icon(GetResourceStream(
-                    new Uri($"pack://application:,,,/Resources/{filename}")
+                    new Uri($"pack://application:,,,/Resources/window%20icon{(ConnectedCount > 0 ? "%20grey" : "")}.ico")
                 ).Stream);
         }
     }

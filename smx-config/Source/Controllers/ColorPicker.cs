@@ -14,13 +14,13 @@ namespace smx_config
 
     public class ColorPicker : Control
     {
-        ColorPickerSlider HueSlider;
+        ColorPickerSlider? HueSlider;
         public delegate void Event();
 
         // The selected ColorButton.  This handles getting and setting the color to the
         // config.
-        ColorButton _colorButton;
-        public ColorButton colorButton
+        ColorButton? _colorButton;
+        public ColorButton? colorButton
         {
             get { return _colorButton; }
             set
@@ -28,20 +28,39 @@ namespace smx_config
                 _colorButton = value;
 
                 // Refresh on change.
-                LoadFromConfigDelegateArgs args = CurrentSMXDevice.singleton.GetState();
+                LoadFromConfigDelegateArgs args = smxDevice.GetState();
                 LoadUIFromConfig(args);
             }
         }
 
 
-        public event Event StartedDragging, StoppedDragging;
+        public event Event? StartedDragging, StoppedDragging;
+
+        private CurrentSMXDevice smxDevice;
+
+        public ColorPicker(CurrentSMXDevice smxDevice)
+        {
+            this.smxDevice = smxDevice;
+        }
+
         public override void OnApplyTemplate()
         {
             base.OnApplyTemplate();
 
-            HueSlider = GetTemplateChild("HueSlider") as ColorPickerSlider;
-            HueSlider.ValueChanged += delegate (object sender, RoutedPropertyChangedEventArgs<double> e) {
-                SaveToConfig();
+            HueSlider = (GetTemplateChild("HueSlider") as ColorPickerSlider)!;
+            HueSlider.ValueChanged += delegate (object sender, RoutedPropertyChangedEventArgs<double> e)
+            {
+                //SaveToConfig();
+                if (UpdatingUI || _colorButton == null)
+            return;
+
+                Color color = Helpers.FromHSV(HueSlider.Value, 1, 1);
+
+                // If we're set to the minimum value, use white instead.
+                if (HueSlider.Value == HueSlider.Minimum)
+                    color = Color.FromRgb(255, 255, 255);
+
+                _colorButton.setColor(color);
             };
 
             HueSlider.StartedDragging += delegate () { StartedDragging?.Invoke(); };
@@ -58,23 +77,10 @@ namespace smx_config
             HueSlider.Ticks = ticks;
 
             OnConfigChange onConfigChange;
-            onConfigChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args) {
+            onConfigChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args)
+            {
                 LoadUIFromConfig(args);
-            });
-        }
-
-        private void SaveToConfig()
-        {
-            if (UpdatingUI || _colorButton == null)
-                return;
-
-            Color color = Helpers.FromHSV(HueSlider.Value, 1, 1);
-
-            // If we're set to the minimum value, use white instead.
-            if (HueSlider.Value == HueSlider.Minimum)
-                color = Color.FromRgb(255, 255, 255);
-
-            _colorButton.setColor(color);
+            }, smxDevice);
         }
 
         bool UpdatingUI = false;

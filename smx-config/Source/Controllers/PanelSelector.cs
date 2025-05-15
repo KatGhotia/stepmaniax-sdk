@@ -47,6 +47,13 @@ namespace smx_config
         public static readonly DependencyProperty PanelColorProperty = DependencyProperty.RegisterAttached("PanelColor",
             typeof(SolidColorBrush), typeof(ColorButton), new FrameworkPropertyMetadata(new SolidColorBrush()));
 
+        protected CurrentSMXDevice smxDevice;
+
+        public ColorButton(CurrentSMXDevice smxDevice)
+        {
+            this.smxDevice = smxDevice;
+        }
+
         public SolidColorBrush PanelColor
         {
             get { return (SolidColorBrush)this.GetValue(PanelColorProperty); }
@@ -70,7 +77,7 @@ namespace smx_config
             OnConfigChange onConfigChange;
             onConfigChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args) {
                 LoadUIFromConfig(args);
-            });
+            }, smxDevice);
         }
 
         // Set PanelColor.  This widget doesn't change the color, it only reflects the current configuration.
@@ -151,6 +158,8 @@ namespace smx_config
             set { this.SetValue(PanelProperty, value); }
         }
 
+        public PanelColorButton(CurrentSMXDevice smxDevice) : base(smxDevice) { }
+
         protected override int getPadNo()
         {
             return Panel < 9 ? 0 : 1;
@@ -185,7 +194,7 @@ namespace smx_config
             config.stepColor[PanelIndex * 3 + 2] = Helpers.ScaleColor(color.B);
 
             SMX.SMX.SetConfig(pad, config);
-            CurrentSMXDevice.singleton.FireConfigurationChanged(this);
+            smxDevice.FireConfigurationChanged(this);
         }
 
         // Return the color set for this panel in config.
@@ -209,6 +218,8 @@ namespace smx_config
         public static readonly DependencyProperty PadProperty = DependencyProperty.RegisterAttached("Pad",
             typeof(int), typeof(FloorColorButton), new FrameworkPropertyMetadata(0));
 
+        public FloorColorButton(CurrentSMXDevice smxDevice) : base(smxDevice) { }
+
         public int Pad
         {
             get { return (int)this.GetValue(PadProperty); }
@@ -229,21 +240,22 @@ namespace smx_config
             // Apply the change and save it to the device.
             int pad = getPadNo();
             if (!SMX.SMX.GetConfig(pad, out SMX.SMXConfig config))
-                return;
+        return;
 
+            // pucgenie: No C# 12.0 available for compatibility reasons
             config.platformStripColor[0] = color.R;
             config.platformStripColor[1] = color.G;
             config.platformStripColor[2] = color.B;
 
             SMX.SMX.SetConfig(pad, config);
-            CurrentSMXDevice.singleton.FireConfigurationChanged(this);
+            smxDevice.FireConfigurationChanged(this);
 
             QueueSetPlatformLights();
         }
 
         // Queue SetPlatformLights to happen after a brief delay.  This rate limits setting
         // the color, so we don't spam the device when dragging the color slider.
-        DispatcherTimer PlatformLightsTimer;
+        DispatcherTimer? PlatformLightsTimer;
         void QueueSetPlatformLights()
         {
             // Stop if SetPlatformLights is already queued.
@@ -299,29 +311,36 @@ namespace smx_config
     // This widget selects which panels are enabled.  We only show one of these for both pads.
     class PanelSelector : Control
     {
-        PanelButton[] EnabledPanelButtons;
-        OnConfigChange onConfigChange;
+        readonly PanelButton[] EnabledPanelButtons = new PanelButton[9];
+        OnConfigChange? onConfigChange;
+
+        private readonly CurrentSMXDevice smxDevice;
+
+        public PanelSelector(CurrentSMXDevice smxDevice)
+        {
+            this.smxDevice = smxDevice;
+        }
 
         public override void OnApplyTemplate()
         {
             base.OnApplyTemplate();
 
-            int[] PanelToIndex = new int[] {
+            byte[] PanelToIndex = new byte[] {
                 7, 8, 9,
                 4, 5, 6,
                 1, 2, 3,
             };
 
-            EnabledPanelButtons = new PanelButton[9];
             for (int i = 0; i < 9; ++i)
-                EnabledPanelButtons[i] = GetTemplateChild($"EnablePanel{PanelToIndex[i]}") as PanelButton;
-
-            foreach (PanelButton button in EnabledPanelButtons)
+            {
+                var button = EnabledPanelButtons[i] = (GetTemplateChild($"EnablePanel{PanelToIndex[i]}") as PanelButton)!;
                 button.Click += EnabledPanelButtonClicked;
+            }
 
-            onConfigChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args) {
+            onConfigChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args)
+            {
                 LoadUIFromConfig(ActivePad.GetFirstActivePadConfig(args));
-            });
+            }, smxDevice);
         }
 
         private void LoadUIFromConfig(SMX.SMXConfig config)
@@ -364,12 +383,13 @@ namespace smx_config
             Console.WriteLine($"Clicked {button}");
 
             // Set the enabled sensor mask on both pads to the state of the UI.
-            foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads())
+            foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads(smxDevice.GetState()))
             {
                 int pad = activePad.Item1;
                 SMX.SMXConfig config = activePad.Item2;
 
                 // This could be done algorithmically, but this is clearer.
+                // pucgenie: Code duplication, nevertheless.
                 int[] PanelButtonToSensorIndex = {
                     0, 0, 1, 1, 2, 2, 3, 3, 4
                 };
