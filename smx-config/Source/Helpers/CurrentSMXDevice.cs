@@ -55,9 +55,18 @@ namespace smx_config
         public object? source;
     };
 
+    public interface ICurrentSMXDevice
+    {
+        event CurrentSMXDevice.ConfigurationChangedDelegate? ConfigurationChanged;
+
+        void FireConfigurationChanged(object? source);
+        LoadFromConfigDelegateArgs GetState();
+        void Shutdown();
+    }
+
     // This class tracks the device we're currently configuring, and runs a callback when
     // it changes.
-    public class CurrentSMXDevice
+    public class CurrentSMXDevice : ICurrentSMXDevice
     {
         // This is fired when FireConfigurationChanged is called, and when the current device
         // changes.
@@ -77,20 +86,22 @@ namespace smx_config
             // Set our update callback.  This will be called when something happens: connection or disconnection,
             // inputs changed, configuration updated, test data updated, etc.  It doesn't specify what's changed,
             // we simply check the whole state.
-            SMX.SMX.Start(delegate(int PadNumber, SMX.SMX.SMXUpdateCallbackReason reason) {
+            SMX.SMX.Start(delegate (int PadNumber, SMX.SMX.SMXUpdateCallbackReason reason)
+            {
                 // Console.WriteLine($"... {reason}");
                 // This is called from a thread, with SMX's internal mutex locked.  We must not call into SMX
                 // or do anything with the UI from here.  Just queue an update back into the UI thread.
-                MainDispatcher.InvokeAsync(delegate() {
+                MainDispatcher.InvokeAsync(delegate ()
+                {
                     switch (reason)
                     {
-                    case SMX.SMX.SMXUpdateCallbackReason.Updated:
-                        CheckForChanges();
-                        break;
-                    case SMX.SMX.SMXUpdateCallbackReason.FactoryResetCommandComplete:
-                        Console.WriteLine("SMX_FactoryResetCommandComplete");
-                        FireConfigurationChanged(null);
-                        break;
+                        case SMX.SMX.SMXUpdateCallbackReason.Updated:
+                            CheckForChanges();
+                            break;
+                        case SMX.SMX.SMXUpdateCallbackReason.FactoryResetCommandComplete:
+                            Console.WriteLine("SMX_FactoryResetCommandComplete");
+                            FireConfigurationChanged(null);
+                            break;
                     }
                 });
             });
@@ -143,7 +154,8 @@ namespace smx_config
             }
 
             // Only fire the delegate if something has actually changed.
-            if (args.ConfigurationChanged || args.InputChanged || args.TestDataChanged) {
+            if (args.ConfigurationChanged || args.InputChanged || args.TestDataChanged)
+            {
                 // TODO: pucgenie: Split it up into 3 distinct events?
                 ConfigurationChanged?.Invoke(args);
             }
@@ -269,17 +281,17 @@ namespace smx_config
 
             Owner.Loaded += delegate(object sender, RoutedEventArgs e)
             {
-                smxDevice.ConfigurationChanged += ConfigurationChanged;
+                smxDevice.ConfigurationChanged += ConfigurationChanged_CSD;
                 Callback(smxDevice.GetState());
             };
 
             Owner.Unloaded += delegate(object sender, RoutedEventArgs e)
             {
-                smxDevice.ConfigurationChanged -= ConfigurationChanged;
+                smxDevice.ConfigurationChanged -= ConfigurationChanged_CSD;
             };
         }
 
-        private void ConfigurationChanged(LoadFromConfigDelegateArgs args)
+        private void ConfigurationChanged_CSD(LoadFromConfigDelegateArgs args)
         {
             Callback(args);
         }

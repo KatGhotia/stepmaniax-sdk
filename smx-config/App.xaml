@@ -1,7 +1,9 @@
 <Application x:Class="smx_config.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:smx_config">
+             xmlns:local="clr-namespace:smx_config"
+             >
+<!-- Startup="Main1" -->
     <Application.Resources>
          
     </Application.Resources>

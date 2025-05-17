@@ -14,9 +14,9 @@ namespace smx_config
         //To be changed on each release
         private const int TOOL_REVISION = 1;
 
-        CurrentSMXDevice smxDevice;
+        readonly CurrentSMXDevice smxDevice;
         
-        OnConfigChange onConfigChange;
+        readonly OnConfigChange onConfigChange;
         readonly ShowAutoLightsColor showAutoLightsColor = new();
 
         public MainWindow(CurrentSMXDevice smxDevice)

@@ -3,6 +3,7 @@ using System.Windows;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Resources;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace smx_config
 {
@@ -16,13 +17,23 @@ namespace smx_config
         [DllImport("kernel32.dll")]
         public static extern bool AllocConsole();
 
-        private System.Windows.Forms.NotifyIcon trayIcon = new();
+        private readonly System.Windows.Forms.NotifyIcon trayIcon = new();
         private MainWindow? window;
 
         App()
         {
             AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionEventHandler;
         }
+        
+        /*[STAThread]
+        public static void Main1() {
+            smx_config.App app = new();
+            
+            var services = new ServiceCollection();
+            services.AddSingleton<ICurrentSMXDevice, CurrentSMXDevice>();
+            
+            app.Run();
+        }*/
 
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -65,7 +76,7 @@ namespace smx_config
                 Current.Shutdown();
         return;
             }
-            
+
             if (!SMX.SMX.DLLAvailable())
             {
                 MessageBox.Show($"SMXConfig initialization error.\n\nSMX.dll failed to load:\n\n{Helpers.GetLastWin32ErrorString()}", "SMXConfig");
@@ -94,14 +105,12 @@ namespace smx_config
             // Show or hide the application window on click.
             // pucgenie: On double-click only (but what about Touch input?)
             //trayIcon.Click += delegate (object sender, EventArgs e) { ToggleMainWindow();  };
-            trayIcon.DoubleClick += delegate (object sender, EventArgs e) { ToggleMainWindow();  };
+            trayIcon.DoubleClick += delegate (object sender, EventArgs e) { ToggleMainWindow(); };
 
-            smxDevice.ConfigurationChanged += delegate(LoadFromConfigDelegateArgs args) {
-                RefreshTrayIcon(args);
-            };
+            smxDevice.ConfigurationChanged += RefreshTrayIcon;
 
             // Do the initial refresh.
-            RefreshTrayIcon(smxDevice.GetState(), true);
+            RefreshTrayIcon(smxDevice.GetState());
 
             // Create the main window.
             if (!Helpers.LaunchedOnStartup())
@@ -169,6 +178,7 @@ namespace smx_config
         {
             string message = e.ExceptionObject.ToString();
             MessageBox.Show($"SMXConfig encountered an unexpected error:\n\n{message}", "SMXConfig");
+            // TODO: pucgenie: save logs?
         }
 
         protected override void OnExit(ExitEventArgs e)
@@ -235,16 +245,14 @@ namespace smx_config
         byte wasConnected = 0;
         private CurrentSMXDevice? smxDevice;
 
-        void RefreshTrayIcon(LoadFromConfigDelegateArgs args, bool force=false)
+        private bool trayIconForceDone = false;
+        void RefreshTrayIcon(LoadFromConfigDelegateArgs args)
         {
-            var ConnectedCount = 0;
-            for (int pad = 0; pad < args.controller.Length; ++pad)
-                if (args.controller[pad].info.connected)
-                   ++ConnectedCount;
-
+            var ConnectedCount = args.controller.Count(pad => pad.info.connected);
             // Skip the refresh if the connected state didn't change.
-            if (wasConnected == ConnectedCount && !force)
+            if (wasConnected == ConnectedCount && trayIconForceDone)
         return;
+            trayIconForceDone = true;
             wasConnected = (byte) ConnectedCount;
 
             trayIcon.Text = $"{ConnectedCount} SMX pads connected";

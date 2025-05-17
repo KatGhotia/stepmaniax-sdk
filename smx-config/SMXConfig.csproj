@@ -28,6 +28,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>10.0</LangVersion>
     <Nullable>enable</Nullable>
+    <ImplicitUsings>true</ImplicitUsings>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugType>full</DebugType>
@@ -64,6 +65,7 @@
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.5" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\window icon.png" />
