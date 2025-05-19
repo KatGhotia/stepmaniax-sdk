@@ -6,7 +6,7 @@ using System.Windows.Shapes;
 
 namespace smx_config
 {
-    public class LevelBar : Control
+    public class LevelBar : System.Windows.Controls.Control
     {
         public static readonly DependencyProperty ValueProperty = DependencyProperty.Register("Value",
             typeof(double), typeof(LevelBar), new FrameworkPropertyMetadata(0.5, ValueChangedCallback));
@@ -53,9 +53,9 @@ namespace smx_config
             set { SetValue(PanelActiveProperty, value); }
         }
 
-        private Rectangle Fill, Back, Lower, Higher;
-        private SolidColorBrush m_enabledColor = new(Color.FromRgb(0, 220, 0));
-        private SolidColorBrush m_disabledColor = new(Color.FromRgb(0, 0, 0));
+        private System.Windows.Shapes.Rectangle Fill, Back, Lower, Higher;
+        private SolidColorBrush m_enabledColor = new(System.Windows.Media.Color.FromRgb(0, 220, 0));
+        private SolidColorBrush m_disabledColor = new(System.Windows.Media.Color.FromRgb(0, 0, 0));
 
         private Thickness m_lowerThickness;
         private Thickness m_higherThickness;
@@ -71,10 +71,10 @@ namespace smx_config
         {
             base.OnApplyTemplate();
 
-            Fill = Template.FindName("Fill", this) as Rectangle;
-            Back = Template.FindName("Back", this) as Rectangle;
-            Lower = Template.FindName("Lower", this) as Rectangle;
-            Higher = Template.FindName("Higher", this) as Rectangle;
+            Fill = Template.FindName("Fill", this) as System.Windows.Shapes.Rectangle;
+            Back = Template.FindName("Back", this) as System.Windows.Shapes.Rectangle;
+            Lower = Template.FindName("Lower", this) as System.Windows.Shapes.Rectangle;
+            Higher = Template.FindName("Higher", this) as System.Windows.Shapes.Rectangle;
             m_lowerThickness = Lower.Margin;
             m_higherThickness = Higher.Margin;
             Refresh();
@@ -102,7 +102,7 @@ namespace smx_config
 
             if (Error)
             {
-                Fill.Fill = new SolidColorBrush(Color.FromRgb(255, 0, 0));
+                Fill.Fill = new SolidColorBrush(System.Windows.Media.Color.FromRgb(255, 0, 0));
             }
             else
             {
@@ -111,7 +111,7 @@ namespace smx_config
                 double GreenValue = 1 - ((Value - 0.5) / 0.5);
                 Byte Red = (Byte)(Math.Max(0, Math.Min(255, RedValue * 255)));
                 Byte Green = (Byte)(Math.Max(0, Math.Min(255, GreenValue * 255)));
-                Fill.Fill = new SolidColorBrush(Color.FromRgb(Red, Green, 0));
+                Fill.Fill = new SolidColorBrush(System.Windows.Media.Color.FromRgb(Red, Green, 0));
             }
 
             Back.Stroke = PanelActive ? m_enabledColor : m_disabledColor;

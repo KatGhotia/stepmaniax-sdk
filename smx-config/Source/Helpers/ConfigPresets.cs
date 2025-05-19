@@ -111,22 +111,24 @@ namespace smx_config
 
         // Return the extra panels that the given panel's sensitivities control when
         // advanced threshold mode is off.
-        static public List<int> GetPanelsToSyncUnifiedThresholds(int fromPanel)
+        static public int[] GetPanelsToSyncUnifiedThresholds(int fromPanel)
         {
-            List<int> result = new();
-            switch (fromPanel)
+            // pucgenie: microoptimization
+            return fromPanel switch
             {
-            case 7: // down (cardinal)
-                result.Add(3); // left
-                result.Add(5); // right
-                break;
-            case 2: // up-right (corners)
-                result.Add(0); // up-left
-                result.Add(6); // down-left
-                result.Add(8); // down-right
-                break;
-            }
-            return result;
+                // down (cardinal)
+                7 => new int[]{
+                    3, // left
+                    5, // right
+                },
+                // up-right (corners)
+                2 => new int[]{
+                    0, // up-left
+                    6, // down-left
+                    8, // down-right
+                },
+                _ => Array.Empty<int>(),
+            };
         }
 
         // The simplified configuration scheme sets thresholds for up, center, cardinal directions

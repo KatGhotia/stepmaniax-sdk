@@ -27,7 +27,7 @@ namespace smx_config
     }
 
     // A base class for buttons used to select a panel to work with.
-    public class PanelSelectButton : Button
+    public class PanelSelectButton : System.Windows.Controls.Button
     {
         // Whether this button is selected.
         public static readonly DependencyProperty IsSelectedProperty = DependencyProperty.RegisterAttached("IsSelected",
@@ -67,8 +67,8 @@ namespace smx_config
         public abstract bool isEnabled(LoadFromConfigDelegateArgs args);
 
         // Get and set our color to the pad configuration.
-        abstract public Color getColor();
-        abstract public void setColor(Color color);
+        abstract public System.Windows.Media.Color getColor();
+        abstract public void setColor(System.Windows.Media.Color color);
 
         public override void OnApplyTemplate()
         {
@@ -88,11 +88,11 @@ namespace smx_config
             // Hide disabled color buttons.
             Visibility = isEnabled(args) ? Visibility.Visible : Visibility.Hidden;
 
-            Color rgb = getColor();
+            System.Windows.Media.Color rgb = getColor();
             PanelColor = new SolidColorBrush(rgb);
         }
 
-        Point MouseDownPosition;
+        System.Windows.Point MouseDownPosition;
 
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
@@ -101,44 +101,44 @@ namespace smx_config
         }
 
         // Handle initiating drag.
-        protected override void OnMouseMove(MouseEventArgs e)
+        protected override void OnMouseMove(System.Windows.Input.MouseEventArgs e)
         {
             if (e.LeftButton == MouseButtonState.Pressed)
             {
-                Point position = e.GetPosition(null);
+                System.Windows.Point position = e.GetPosition(null);
 
                 // Why do we have to handle drag thresholding manually?  This is the platform's job.
                 // If we don't do this, clicks won't work at all.
                 if (Math.Abs(position.X - MouseDownPosition.X) >= SystemParameters.MinimumHorizontalDragDistance ||
                     Math.Abs(position.Y - MouseDownPosition.Y) >= SystemParameters.MinimumVerticalDragDistance)
                 {
-                    DragDrop.DoDragDrop(this, Helpers.ColorToString(PanelColor.Color), DragDropEffects.Copy);
+                    DragDrop.DoDragDrop(this, Helpers.ColorToString(PanelColor.Color), System.Windows.DragDropEffects.Copy);
                 }
             }
 
             base.OnMouseMove(e);
         }
 
-        private bool HandleDrop(DragEventArgs e)
+        private bool HandleDrop(System.Windows.DragEventArgs e)
         {
-            PanelColorButton Button = e.Source as PanelColorButton;
+            var Button = e.Source as PanelColorButton;
             if (Button == null)
         return false;
 
             // A color is being dropped from another button.  Don't just update our color, since
             // that will just change the button color and not actually apply it.
-            DataObject data = e.Data as DataObject;
+            var data = e.Data as System.Windows.DataObject;
             if (data == null)
         return false;
 
             // Parse the color being dragged onto us, and set it.
-            Color color = Helpers.ParseColorString(data.GetData(typeof(string)) as string);
+            var color = Helpers.ParseColorString(data.GetData(typeof(string)) as string);
             setColor(color);
 
             return true;
         }
 
-        protected override void OnDrop(DragEventArgs e)
+        protected override void OnDrop(System.Windows.DragEventArgs e)
         {
             if (!HandleDrop(e))
                 base.OnDrop(e);
@@ -179,7 +179,7 @@ namespace smx_config
             return enabledPanels[Panel % 9];
         }
 
-        public override void setColor(Color color)
+        public override void setColor(System.Windows.Media.Color color)
         {
             // Apply the change and save it to the device.
             var pad = getPadNo();

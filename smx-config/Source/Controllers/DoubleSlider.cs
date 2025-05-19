@@ -7,7 +7,7 @@ namespace smx_config
 {
     // A slider with two handles, and a handle connecting them.  Dragging the handle drags both
     // of the sliders.
-    class DoubleSlider: Control
+    class DoubleSlider: System.Windows.Controls.Control
     {
         public delegate void ValueChangedDelegate(DoubleSlider slider);
         public event ValueChangedDelegate ValueChanged;
@@ -98,7 +98,7 @@ namespace smx_config
         private RepeatButton? DecreaseButton;
         private RepeatButton? IncreaseButton;
 
-        protected override Size ArrangeOverride(Size arrangeSize)
+        protected override System.Windows.Size ArrangeOverride(System.Windows.Size arrangeSize)
         {
             arrangeSize = base.ArrangeOverride(arrangeSize);
 

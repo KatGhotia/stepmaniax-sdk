@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace smx_config
 {
 
-    public class PanelIconWithSensorsSensor : Control
+    public class PanelIconWithSensorsSensor : System.Windows.Controls.Control
     {
         // 0: black
         // 1: dim highlight
@@ -20,9 +20,9 @@ namespace smx_config
     }
 
     // A control with one button for each of four sensors:
-    class PanelIconWithSensors : Control
+    class PanelIconWithSensors : System.Windows.Controls.Control
     {
-        PanelIconWithSensorsSensor[] panelIconWithSensorsSensor;
+        PanelIconWithSensorsSensor[]? panelIconWithSensorsSensor;
         public override void OnApplyTemplate()
         {
             base.OnApplyTemplate();
@@ -39,7 +39,7 @@ namespace smx_config
         }
     }
 
-    public class PlatformSensorDisplay : Control
+    public class PlatformSensorDisplay : System.Windows.Controls.Control
     {
         PanelIconWithSensors[] panelIconWithSensors;
         public override void OnApplyTemplate()

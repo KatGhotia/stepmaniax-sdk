@@ -93,7 +93,7 @@ namespace smx_config
     }
 
 
-    public class DiagnosticsControl: Control
+    public class DiagnosticsControl: System.Windows.Controls.Control
     {
         // Which panel is currently selected:
         public static readonly DependencyProperty SelectedPanelProperty = DependencyProperty.Register("SelectedPanel",
@@ -105,9 +105,9 @@ namespace smx_config
         }
 
         private LevelBar[]? LevelBars;
-        private Label[]? LevelBarText;
-        private ComboBox? DiagnosticMode;
-        private Panel? CurrentDIPGroup;
+        private System.Windows.Controls.Label[]? LevelBarText;
+        private System.Windows.Controls.ComboBox? DiagnosticMode;
+        private System.Windows.Controls.Panel? CurrentDIPGroup;
         private FrameImage? CurrentDIP;
         private FrameImage? ExpectedDIP;
         private FrameworkElement? NoResponseFromPanel;
@@ -136,27 +136,27 @@ namespace smx_config
                 LevelBars[i] = (Template.FindName($"SensorBar{i}", this) as LevelBar)!;
             }
 
-            LevelBarText = new Label[4];
+            LevelBarText = new System.Windows.Controls.Label[4];
             for (int i = 0; i < LevelBars.Length; ++i)
             {
-                LevelBarText[i] = (Template.FindName($"SensorBarLevel{i}", this) as Label)!;
+                LevelBarText[i] = (System.Windows.Controls.Label) Template.FindName($"SensorBarLevel{i}", this);
             }
 
-            DiagnosticMode = (Template.FindName("DiagnosticMode", this) as ComboBox)!;
-            CurrentDIPGroup = (Template.FindName("CurrentDIPGroup", this) as Panel)!;
-            CurrentDIP = (Template.FindName("CurrentDIP", this) as FrameImage)!;
-            ExpectedDIP = (Template.FindName("ExpectedDIP", this) as FrameImage)!;
-            NoResponseFromPanel = (Template.FindName("NoResponseFromPanel", this) as FrameworkElement)!;
-            NoResponseFromSensors = (Template.FindName("NoResponseFromSensors", this) as FrameworkElement)!;
-            BadSensorDIPSwitches = (Template.FindName("BadSensorDIPSwitches", this) as FrameworkElement)!;
-            P1Diagnostics = (Template.FindName("P1Diagnostics", this) as FrameworkElement)!;
-            P2Diagnostics = (Template.FindName("P2Diagnostics", this) as FrameworkElement)!;
+            DiagnosticMode = (System.Windows.Controls.ComboBox)Template.FindName("DiagnosticMode", this);
+            CurrentDIPGroup = (System.Windows.Controls.Panel)Template.FindName("CurrentDIPGroup", this);
+            CurrentDIP = (FrameImage)Template.FindName("CurrentDIP", this);
+            ExpectedDIP = (FrameImage)Template.FindName("ExpectedDIP", this);
+            NoResponseFromPanel = (FrameworkElement)Template.FindName("NoResponseFromPanel", this);
+            NoResponseFromSensors = (FrameworkElement)Template.FindName("NoResponseFromSensors", this);
+            BadSensorDIPSwitches = (FrameworkElement)Template.FindName("BadSensorDIPSwitches", this);
+            P1Diagnostics = (FrameworkElement)Template.FindName("P1Diagnostics", this);
+            P2Diagnostics = (FrameworkElement)Template.FindName("P2Diagnostics", this);
 
             DIPLabelRight = (Template.FindName("DIPLabelRight", this) as FrameworkElement)!;
             DIPLabelLeft = (Template.FindName("DIPLabelLeft", this) as FrameworkElement)!;
 
-            Button Recalibrate = (Template.FindName("Recalibrate", this) as Button)!;
-            Recalibrate.Click += delegate (object sender, RoutedEventArgs e)
+            var Recalibrate = (System.Windows.Controls.Button)Template.FindName("Recalibrate", this);
+            Recalibrate.Click += delegate (object? sender, RoutedEventArgs e)
             {
                 for (int pad = 0; pad < 2; ++pad)
                     SMX.SMX.ForceRecalibration(pad);
@@ -164,18 +164,18 @@ namespace smx_config
 
             // Note that we won't get a MouseUp if the display is hidden due to a controller
             // disconnection while the mouse is held.  We handle this in Refresh().
-            Button LightAll = (Template.FindName("LightAll", this) as Button)!;
-            LightAll.PreviewMouseDown += delegate (object sender, MouseButtonEventArgs e)
+            var LightAll = (System.Windows.Controls.Button)Template.FindName("LightAll", this);
+            LightAll.PreviewMouseDown += delegate (object? sender, MouseButtonEventArgs e)
             {
                 SetShowAllLights?.Invoke(true);
             };
-            LightAll.PreviewMouseUp += delegate (object sender, MouseButtonEventArgs e)
+            LightAll.PreviewMouseUp += delegate (object? sender, MouseButtonEventArgs e)
             {
                 SetShowAllLights?.Invoke(false);
             };
 
             // Update the test mode when the dropdown is changed.
-            DiagnosticMode!.AddHandler(ComboBox.SelectionChangedEvent, new RoutedEventHandler(delegate (object sender, RoutedEventArgs e)
+            DiagnosticMode!.AddHandler(System.Windows.Controls.ComboBox.SelectionChangedEvent, new RoutedEventHandler(delegate (object? sender, RoutedEventArgs e)
             {
                 for (int pad = 0; pad < 2; ++pad)
                     SMX.SMX.SetSensorTestMode(pad, (SMX.SMX.SensorTestMode)DiagnosticMode.SelectedValue, "Diagnostics");

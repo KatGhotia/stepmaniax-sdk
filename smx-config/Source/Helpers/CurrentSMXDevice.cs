@@ -203,7 +203,7 @@ namespace smx_config
     public class OnConfigChange
     {
         public delegate void LoadFromConfigDelegate(LoadFromConfigDelegateArgs args);
-        private readonly Control Owner;
+        private readonly System.Windows.Controls.Control Owner;
         private readonly LoadFromConfigDelegate Callback;
         private bool _RefreshOnInputChange = false;
 
@@ -229,7 +229,7 @@ namespace smx_config
         //
         // In addition, the callback is called when the control is Loaded, to load the initial
         // state.
-        public OnConfigChange(Control owner, LoadFromConfigDelegate callback, CurrentSMXDevice smxDevice)
+        public OnConfigChange(System.Windows.Controls.Control owner, LoadFromConfigDelegate callback, CurrentSMXDevice smxDevice)
         {
             Owner = owner;
             Callback = callback;
@@ -261,7 +261,7 @@ namespace smx_config
     public class OnInputChange
     {
         public delegate void LoadFromConfigDelegate(LoadFromConfigDelegateArgs args);
-        private readonly Control Owner;
+        private readonly System.Windows.Controls.Control Owner;
         private readonly LoadFromConfigDelegate Callback;
 
         // Owner is the Control that we're calling.  This callback will be disable when the
@@ -270,7 +270,7 @@ namespace smx_config
         //
         // In addition, the callback is called when the control is Loaded, to load the initial
         // state.
-        public OnInputChange(Control owner, LoadFromConfigDelegate callback, CurrentSMXDevice? smxDevice)
+        public OnInputChange(System.Windows.Controls.Control owner, LoadFromConfigDelegate callback, CurrentSMXDevice? smxDevice)
         {
             Owner = owner;
             Callback = callback;

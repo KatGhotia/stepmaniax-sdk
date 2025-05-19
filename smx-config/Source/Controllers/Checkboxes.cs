@@ -4,7 +4,7 @@ using System.Windows.Controls;
 
 namespace smx_config
 {
-    public class LightAllPanelsCheckbox : CheckBox
+    public class LightAllPanelsCheckbox : System.Windows.Controls.CheckBox
     {
         public static readonly DependencyProperty LightAllPanelsProperty = DependencyProperty.Register("LightAllPanels",
             typeof(bool), typeof(LightAllPanelsCheckbox), new FrameworkPropertyMetadata(false));
@@ -55,7 +55,7 @@ namespace smx_config
         }
     }
 
-    public class EnableCenterTopSensorCheckbox : CheckBox
+    public class EnableCenterTopSensorCheckbox : System.Windows.Controls.CheckBox
     {
         public static readonly DependencyProperty EnableSensorProperty = DependencyProperty.Register("EnableSensor",
             typeof(bool), typeof(EnableCenterTopSensorCheckbox), new FrameworkPropertyMetadata(false));
@@ -105,7 +105,7 @@ namespace smx_config
         }
     }
 
-    public class PanelTestModeCheckbox : CheckBox
+    public class PanelTestModeCheckbox : System.Windows.Controls.CheckBox
     {
         public override void OnApplyTemplate()
         {

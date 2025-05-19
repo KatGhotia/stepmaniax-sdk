@@ -24,9 +24,68 @@ namespace smx_config
             this.smxDevice = smxDevice;
             InitializeComponent();
 
-             onConfigChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args)
+            onConfigChange = new OnConfigChange(this, delegate (LoadFromConfigDelegateArgs args)
             {
-                LoadUIFromConfig(args);
+                //LoadUIFromConfig(args);
+
+                // Refresh whether LightsAnimation_SetAuto should be enabled.
+                SMX.SMXConfig firstConfig = ActivePad.GetFirstActivePadConfig(smxDevice.GetState());
+                bool usePressedAnimationsEnabled = (firstConfig.configFlags & SMX.SMXConfigFlags.AutoLightingUsePressedAnimations) != 0;
+                SMX.SMX.LightsAnimation_SetAuto(usePressedAnimationsEnabled);
+
+                bool EitherControllerConnected = args.controller[0].info.connected || args.controller[1].info.connected;
+                Main.Visibility = EitherControllerConnected ? Visibility.Visible : Visibility.Hidden;
+                Searching.Visibility = EitherControllerConnected ? Visibility.Hidden : Visibility.Visible;
+                ConnectedPads.Visibility = EitherControllerConnected ? Visibility.Visible : Visibility.Hidden;
+                PanelColorP1.Visibility = args.controller[0].info.connected ? Visibility.Visible : Visibility.Collapsed;
+                PanelColorP2.Visibility = args.controller[1].info.connected ? Visibility.Visible : Visibility.Collapsed;
+                // TODO: pucgenie: Take into account minVersion of firmware for selectively hiding unavailable options
+                EnableCenterTopSensorCheckbox.Visibility = P1_Floor.Visibility = P2_Floor.Visibility =
+                    args.firmwareVersion().Item2 >= 5 ? Visibility.Visible : Visibility.Collapsed;
+
+                DebounceNodelayBox.Text = firstConfig.debounceNodelayMilliseconds.ToString();
+                DebounceDelayBox.Text = firstConfig.debounceDelayMs.ToString();
+                PanelDebounceBox.Text = firstConfig.panelDebounceMicroseconds.ToString();
+                BadSensorBox.Text = firstConfig.badSensorMinimumDelaySeconds.ToString();
+                AutoCalibMaxDeviationBox.Text = firstConfig.autoCalibrationMaxDeviation.ToString();
+                AutoCalibAverageBox.Text = firstConfig.autoCalibrationAveragesPerUpdate.ToString();
+                AutoCalibSamplesBox.Text = firstConfig.autoCalibrationSamplesPerAverage.ToString();
+                AutoCalibMaxTare.Text = firstConfig.autoCalibrationMaxTare.ToString();
+                AutoCalibButton.Content = firstConfig.autoCalibrationMaxTare == 16 ? "Enable Auto Calibration" : "Disable Auto Calibration";
+
+                // Show the color slider or GIF UI depending on which one is set in flags.
+                // If both pads are turned on, just use the first one.
+                foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads(smxDevice.GetState()))
+                {
+                    SMX.SMXConfig config = activePad.Item2;
+
+                    // If SMXConfigFlags_AutoLightingUsePressedAnimations is set, show the GIF UI.
+                    // If it's not set, show the color slider UI.
+                    SMX.SMXConfigFlags flags = config.configFlags;
+                    bool usePressedAnimations = (flags & SMX.SMXConfigFlags.AutoLightingUsePressedAnimations) != 0;
+                    ColorPickerGroup.Visibility = usePressedAnimations ? Visibility.Collapsed : Visibility.Visible;
+                    GIFGroup.Visibility = usePressedAnimations ? Visibility.Visible : Visibility.Collapsed;
+
+                    // Tell the color mode buttons which one is selected, to set the button highlight.
+                    PanelColorsButton.Selected = !usePressedAnimations;
+                    GIFAnimationsButton.Selected = usePressedAnimations;
+
+                    break;
+                }
+
+                RefreshConnectedPadList(args);
+                RefreshUploadPadText(args);
+
+                // If a device has connected or disconnected, refresh the displayed threshold
+                // sliders.  Don't do this otherwise, or we'll do this when the sliders are
+                // dragged.
+                if (args.ConnectionsChanged)
+                    CreateThresholdSliders();
+
+                // If a second controller has connected and we're on Both, see if we need to prompt
+                // to sync configs.  We only actually need to do this if a controller just connected.
+                if (args.ConfigurationChanged)
+                    CheckConfiguringBothPads(args);
             }, smxDevice);
 
             // If we're controlling GIF animations and the firmware doesn't support
@@ -34,7 +93,7 @@ namespace smx_config
             // to tray to keep playing animations.  If we're not controlling animations,
             // or the firmware supports doing them automatically, don't bug the user
             // with a prompt.
-            Closing += delegate (object sender, System.ComponentModel.CancelEventArgs e)
+            Closing += delegate (object? sender, System.ComponentModel.CancelEventArgs e)
             {
                 LoadFromConfigDelegateArgs args = smxDevice.GetState();
 
@@ -69,7 +128,7 @@ namespace smx_config
                 if (!shouldConfirmExit)
         return;
 
-                MessageBoxResult result = MessageBox.Show(
+                MessageBoxResult result = System.Windows.MessageBox.Show(
 @"Close StepManiaX configuration?
 
 GIF animations will keep playing if the application is minimized.",
@@ -241,68 +300,6 @@ GIF animations will keep playing if the application is minimized.",
             smxDevice.FireConfigurationChanged(null);
         }
 
-        private void LoadUIFromConfig(LoadFromConfigDelegateArgs args)
-        {
-            // Refresh whether LightsAnimation_SetAuto should be enabled.
-            SMX.SMXConfig firstConfig = ActivePad.GetFirstActivePadConfig(smxDevice.GetState());
-            bool usePressedAnimationsEnabled = (firstConfig.configFlags & SMX.SMXConfigFlags.AutoLightingUsePressedAnimations) != 0;
-            SMX.SMX.LightsAnimation_SetAuto(usePressedAnimationsEnabled);
-
-            bool EitherControllerConnected = args.controller[0].info.connected || args.controller[1].info.connected;
-            Main.Visibility = EitherControllerConnected ? Visibility.Visible : Visibility.Hidden;
-            Searching.Visibility = EitherControllerConnected ? Visibility.Hidden : Visibility.Visible;
-            ConnectedPads.Visibility = EitherControllerConnected ? Visibility.Visible : Visibility.Hidden;
-            PanelColorP1.Visibility = args.controller[0].info.connected ? Visibility.Visible : Visibility.Collapsed;
-            PanelColorP2.Visibility = args.controller[1].info.connected ? Visibility.Visible : Visibility.Collapsed;
-            // TODO: pucgenie: Take into account minVersion of firmware for selectively hiding unavailable options
-            EnableCenterTopSensorCheckbox.Visibility = P1_Floor.Visibility = P2_Floor.Visibility =
-                args.firmwareVersion().Item2 >= 5 ? Visibility.Visible : Visibility.Collapsed;
-
-            DebounceNodelayBox.Text = firstConfig.debounceNodelayMilliseconds.ToString();
-            DebounceDelayBox.Text = firstConfig.debounceDelayMs.ToString();
-            PanelDebounceBox.Text = firstConfig.panelDebounceMicroseconds.ToString();
-            BadSensorBox.Text = firstConfig.badSensorMinimumDelaySeconds.ToString();
-            AutoCalibMaxDeviationBox.Text = firstConfig.autoCalibrationMaxDeviation.ToString();
-            AutoCalibAverageBox.Text = firstConfig.autoCalibrationAveragesPerUpdate.ToString();
-            AutoCalibSamplesBox.Text = firstConfig.autoCalibrationSamplesPerAverage.ToString();
-            AutoCalibMaxTare.Text = firstConfig.autoCalibrationMaxTare.ToString();
-            AutoCalibButton.Content = firstConfig.autoCalibrationMaxTare == 16 ? "Enable Auto Calibration" : "Disable Auto Calibration";
-
-            // Show the color slider or GIF UI depending on which one is set in flags.
-            // If both pads are turned on, just use the first one.
-            foreach (Tuple<int, SMX.SMXConfig> activePad in ActivePad.ActivePads(smxDevice.GetState()))
-            {
-                SMX.SMXConfig config = activePad.Item2;
-
-                // If SMXConfigFlags_AutoLightingUsePressedAnimations is set, show the GIF UI.
-                // If it's not set, show the color slider UI.
-                SMX.SMXConfigFlags flags = config.configFlags;
-                bool usePressedAnimations = (flags & SMX.SMXConfigFlags.AutoLightingUsePressedAnimations) != 0;
-                ColorPickerGroup.Visibility = usePressedAnimations ? Visibility.Collapsed : Visibility.Visible;
-                GIFGroup.Visibility = usePressedAnimations ? Visibility.Visible : Visibility.Collapsed;
-
-                // Tell the color mode buttons which one is selected, to set the button highlight.
-                PanelColorsButton.Selected = !usePressedAnimations;
-                GIFAnimationsButton.Selected = usePressedAnimations;
-
-                break;
-            }
-
-            RefreshConnectedPadList(args);
-            RefreshUploadPadText(args);
-
-            // If a device has connected or disconnected, refresh the displayed threshold
-            // sliders.  Don't do this otherwise, or we'll do this when the sliders are
-            // dragged.
-            if (args.ConnectionsChanged)
-                CreateThresholdSliders();
-
-            // If a second controller has connected and we're on Both, see if we need to prompt
-            // to sync configs.  We only actually need to do this if a controller just connected.
-            if (args.ConfigurationChanged)
-                CheckConfiguringBothPads(args);
-        }
-
         ColorButton? selectedButton;
 
         // Return all color picker buttons.
@@ -365,7 +362,7 @@ GIF animations will keep playing if the application is minimized.",
 
         private void ConnectedPadList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var newSelection = (ConnectedPadList.SelectedValue as SelectedPad?).Value;
+            var newSelection = (ConnectedPadList.SelectedValue as SelectedPad).Value;
             
             if (ActivePad.selectedPad == newSelection)
         return;
@@ -402,7 +399,7 @@ GIF animations will keep playing if the application is minimized.",
 
             string messageBoxText = @"The two pads have different settings.  Do you want to 
 match P2 settings to P1 and configure both pads together?  (This won't affect panel colors.)";
-            MessageBoxResult result = MessageBox.Show(messageBoxText, "StepManiaX", MessageBoxButton.YesNo, MessageBoxImage.None);
+            MessageBoxResult result = System.Windows.MessageBox.Show(messageBoxText, "StepManiaX", MessageBoxButton.YesNo, MessageBoxImage.None);
             if (result == MessageBoxResult.Yes)
             {
                 SyncP2FromP1(config1, config2);
@@ -514,7 +511,7 @@ match P2 settings to P1 and configure both pads together?  (This won't affect pa
             smxDevice.FireConfigurationChanged(null);
         }
 
-        private ushort TryParseShortTextData(TextBox box, string title, ref string? error)
+        private ushort TryParseShortTextData(System.Windows.Controls.TextBox box, string title, ref string? error)
         {
             //An error already occured
             if (!string.IsNullOrEmpty(error))
@@ -527,7 +524,7 @@ match P2 settings to P1 and configure both pads together?  (This won't affect pa
             return default;
         }
 
-        private byte TryParseByteTextData(TextBox box, string title, ref string? error)
+        private byte TryParseByteTextData(System.Windows.Controls.TextBox box, string title, ref string? error)
         {
             //An error already occured
             if (!string.IsNullOrEmpty(error))
@@ -619,7 +616,7 @@ match P2 settings to P1 and configure both pads together?  (This won't affect pa
                 try {
                     SMXHelpers.ImportSettingsFromJSON(json, ref config);
                 } catch (SMXJSON.ParseError e2) {
-                    MessageBox.Show(e2.Message, $"Error importing configuration, pad {pad+1}", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    System.Windows.MessageBox.Show(e2.Message, $"Error importing configuration, pad {pad+1}", MessageBoxButton.OK, MessageBoxImage.Warning);
             break;
                 }
                 SMX.SMX.SetConfig(pad, config);
@@ -659,7 +656,7 @@ match P2 settings to P1 and configure both pads together?  (This won't affect pa
                     // Any errors here are problems with the GIF, so there's no point trying
                     // to load it for the second pad if the first returns an error.  Just show the
                     // error and stop.
-                    MessageBox.Show(error, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    System.Windows.MessageBox.Show(error, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
 
                     // Return without saving to settings on error.
         return;

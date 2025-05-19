@@ -290,8 +290,12 @@ namespace SMX
         [MarshalAs(UnmanagedType.ByValArray, ArraySubType=UnmanagedType.I1, SizeConst = 9*4)]
         public bool[] iWrongSensorJumper;
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
+            if (obj == null)
+            {
+        return false;
+            }
             SMXSensorTestModeData other = (SMXSensorTestModeData) obj;
             return
                 Helpers.SequenceEqual(bHaveDataFromPanel, other.bHaveDataFromPanel) &&
@@ -303,7 +307,10 @@ namespace SMX
 
         // Dummy override to silence a bad warning.  We don't use these in containers that need
         // a hash code implementation.
-        public override int GetHashCode() { return base.GetHashCode(); }
+        public override int GetHashCode()
+        {
+            throw new NotImplementedException();
+        }
 
         public bool HasSensorValid(int panel, int sensor, bool checkData = true)
         {
@@ -336,8 +343,7 @@ namespace SMX
 
             return false;
         }
-    };
-
+    }
     public static class SMX
     {
         [System.Flags]
@@ -692,7 +698,7 @@ namespace SMX
             {
                 // SMX_LightsAnimation_Load takes a char **error, which is set to the error
                 // string.
-                error = Marshal.PtrToStringAnsi(error_pointer);
+                error = Marshal.PtrToStringAnsi(error_pointer)!;
             }
 
             return result;

@@ -11,7 +11,7 @@ namespace smx_config
     }
 
     // A control with one button for each of four sensors:
-    class SensorSelector: Control
+    class SensorSelector: System.Windows.Controls.Control
     {
         // The panel we're editing (0-8).
         public static readonly DependencyProperty PanelProperty = DependencyProperty.RegisterAttached("Panel",

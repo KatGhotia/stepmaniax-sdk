@@ -6,7 +6,7 @@ using System.Collections.Generic;
 namespace smx_config
 {
     // This implements the threshold slider widget for changing an upper/lower threshold pair.
-    public class ThresholdSlider : Control
+    public class ThresholdSlider : System.Windows.Controls.Control
     {
         public static readonly DependencyProperty TypeProperty = DependencyProperty.Register("Type",
             typeof(string), typeof(ThresholdSlider), new FrameworkPropertyMetadata(""));
@@ -50,7 +50,7 @@ namespace smx_config
         }
 
         DoubleSlider? slider;
-        Label? LowerLabel, UpperLabel;
+        System.Windows.Controls.Label? LowerLabel, UpperLabel;
         //Image ThresholdWarning;
         PlatformSensorDisplay? SensorDisplay;
         LevelBar? SensorBar;
@@ -70,8 +70,8 @@ namespace smx_config
             base.OnApplyTemplate();
 
             slider = (GetTemplateChild("Slider") as DoubleSlider)!;
-            LowerLabel = (GetTemplateChild("LowerValue") as Label)!;
-            UpperLabel = (GetTemplateChild("UpperValue") as Label)!;
+            LowerLabel = (GetTemplateChild("LowerValue") as System.Windows.Controls.Label)!;
+            UpperLabel = (GetTemplateChild("UpperValue") as System.Windows.Controls.Label)!;
             //ThresholdWarning = GetTemplateChild("ThresholdWarning") as Image;
             SensorDisplay = (GetTemplateChild("PlatformSensorDisplay") as PlatformSensorDisplay)!;
             SensorBar = (GetTemplateChild("SensorBar") as LevelBar)!;
@@ -114,7 +114,7 @@ namespace smx_config
             };
 
             // Show the edit button for the custom-sensors slider.
-            var EditCustomSensorsButton = (GetTemplateChild("EditCustomSensorsButton") as Button)!;
+            var EditCustomSensorsButton = (GetTemplateChild("EditCustomSensorsButton") as System.Windows.Controls.Button)!;
             EditCustomSensorsButton.Visibility = Type == "custom-sensors" ? Visibility.Visible : Visibility.Hidden;
             EditCustomSensorsButton.Click += delegate (object sender, RoutedEventArgs e)
             {
@@ -260,7 +260,7 @@ namespace smx_config
 
     // The checkbox next to the threshold slider to turn it on or off.  This is only used
     // for inner-sensors and outer-sensors, and hides itself automatically for others.
-    public class ThresholdEnabledButton : CheckBox
+    public class ThresholdEnabledButton : System.Windows.Controls.CheckBox
     {
         // Which threshold slider this is for.  This is bound to ThresholdSlider.Type above.
         public static readonly DependencyProperty TypeProperty = DependencyProperty.Register("Type",

@@ -1,13 +1,10 @@
-using System;
 using System.Windows;
 using System.Runtime.InteropServices;
-using System.Threading;
-using System.Resources;
-using Microsoft.Extensions.DependencyInjection;
+//using Microsoft.Extensions.DependencyInjection;
 
 namespace smx_config
 {
-    public partial class App: Application
+    public partial class App : System.Windows.Application
     {
         [DllImport("SMX.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern void SMX_Internal_OpenConsole();
@@ -24,7 +21,7 @@ namespace smx_config
         {
             AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionEventHandler;
         }
-        
+
         /*[STAThread]
         public static void Main1() {
             smx_config.App app = new();
@@ -43,7 +40,7 @@ namespace smx_config
             if (ForegroundExistingInstance())
             {
                 Shutdown();
-        return;
+                return;
             }
 
             // Only create a console to show SMX.dll logs and other console logs if built for debug
@@ -66,22 +63,22 @@ namespace smx_config
             {
                 Console.Error.WriteLine("LaunchOnStartup disabled in App config.");
                 Shutdown();
-        return;
+                return;
             }
 
             LaunchOnStartup.Enable = true;
             if (!SMX.SMX.DLLExists())
             {
-                MessageBox.Show($"SMXConfig startup error.\n\nSMX.dll couldn't be found:\n\n{Helpers.GetLastWin32ErrorString()}", "SMXConfig");
+                System.Windows.MessageBox.Show($"SMXConfig startup error.\n\nSMX.dll couldn't be found:\n\n{Helpers.GetLastWin32ErrorString()}", "SMXConfig");
                 Current.Shutdown();
-        return;
+                return;
             }
 
             if (!SMX.SMX.DLLAvailable())
             {
-                MessageBox.Show($"SMXConfig initialization error.\n\nSMX.dll failed to load:\n\n{Helpers.GetLastWin32ErrorString()}", "SMXConfig");
+                System.Windows.MessageBox.Show($"SMXConfig initialization error.\n\nSMX.dll failed to load:\n\n{Helpers.GetLastWin32ErrorString()}", "SMXConfig");
                 Current.Shutdown();
-        return;
+                return;
             }
 
             if (Helpers.GetDebug())
@@ -105,7 +102,7 @@ namespace smx_config
             // Show or hide the application window on click.
             // pucgenie: On double-click only (but what about Touch input?)
             //trayIcon.Click += delegate (object sender, EventArgs e) { ToggleMainWindow();  };
-            trayIcon.DoubleClick += delegate (object sender, EventArgs e) { ToggleMainWindow(); };
+            trayIcon.DoubleClick += delegate (object? sender, EventArgs e) { ToggleMainWindow(); };
 
             smxDevice.ConfigurationChanged += RefreshTrayIcon;
 
@@ -150,7 +147,8 @@ namespace smx_config
 
         public void MinimizeToTray()
         {
-            if (window == null) {
+            if (window == null)
+            {
                 throw new Exception("window has to be initialized before");
             }
             // Just hide the window.  Don't actually set the window to minimized, since it
@@ -169,15 +167,15 @@ namespace smx_config
             window.Activate();
         }
 
-        private void MainWindowClosed(object sender, EventArgs e)
+        private void MainWindowClosed(object? sender, EventArgs e)
         {
             window = null;
         }
 
         private void UnhandledExceptionEventHandler(object sender, UnhandledExceptionEventArgs e)
         {
-            string message = e.ExceptionObject.ToString();
-            MessageBox.Show($"SMXConfig encountered an unexpected error:\n\n{message}", "SMXConfig");
+            var message = e.ExceptionObject.ToString();
+            System.Windows.MessageBox.Show($"SMXConfig encountered an unexpected error:\n\n{message}", "SMXConfig crashed");
             // TODO: pucgenie: save logs?
         }
 
@@ -204,7 +202,7 @@ namespace smx_config
             {
                 // Signal the event to foreground the existing instance.
                 SMXConfigEvent.Set();
-        return true;
+                return true;
             }
 
             ThreadPool.RegisterWaitForSingleObject(SMXConfigEvent, ForegroundApplicationCallback, this, Timeout.Infinite, false);
@@ -215,8 +213,9 @@ namespace smx_config
         private static void ForegroundApplicationCallback(Object self, Boolean timedOut)
         {
             // This is called when another instance sends us a message over SMXConfigEvent.
-            Application.Current.Dispatcher.Invoke(new Action(() => {
-                App application = (App) Application.Current;
+            System.Windows.Application.Current.Dispatcher.Invoke(new Action(() =>
+            {
+                App application = (App)System.Windows.Application.Current;
                 application.BringToForeground();
             }));
         }
@@ -235,8 +234,9 @@ namespace smx_config
         private static void ShutdownApplicationCallback(Object self, Boolean timedOut)
         {
             // This is called when another instance sends us a message over SMXConfigShutdown.
-            Application.Current.Dispatcher.Invoke(new Action(() => {
-                App application = (App) Application.Current;
+            System.Windows.Application.Current.Dispatcher.Invoke(new Action(() =>
+            {
+                App application = (App)System.Windows.Application.Current;
                 application.Shutdown();
             }));
         }
@@ -251,9 +251,9 @@ namespace smx_config
             var ConnectedCount = args.controller.Count(pad => pad.info.connected);
             // Skip the refresh if the connected state didn't change.
             if (wasConnected == ConnectedCount && trayIconForceDone)
-        return;
+                return;
             trayIconForceDone = true;
-            wasConnected = (byte) ConnectedCount;
+            wasConnected = (byte)ConnectedCount;
 
             trayIcon.Text = $"{ConnectedCount} SMX pads connected";
 

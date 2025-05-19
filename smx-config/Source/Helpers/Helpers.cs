@@ -142,16 +142,16 @@ namespace smx_config
             return Enumerable.SequenceEqual(first, second);
         }
 
-        public static Color ColorFromFloatRGB(double r, double g, double b)
+        public static System.Windows.Media.Color ColorFromFloatRGB(double r, double g, double b)
         {
             byte R = (byte) Math.Max(0, Math.Min(255, r * 255));
             byte G = (byte) Math.Max(0, Math.Min(255, g * 255));
             byte B = (byte) Math.Max(0, Math.Min(255, b * 255));
-            return Color.FromRgb(R, G, B);
+            return System.Windows.Media.Color.FromRgb(R, G, B);
         }
 
         // Return a Color as an HTML color code.
-        public static string ColorToString(Color color)
+        public static string ColorToString(System.Windows.Media.Color color)
         {
             // WPF's Color.ToString() returns #AARRGGBB, which is just wrong.  Alpha is always
             // last in HTML color codes.  We don't need alpha, so just strip it off.
@@ -159,18 +159,18 @@ namespace smx_config
         }
 
         // Parse #RRGGBB and return a Color, or white if the string isn't in the correct format.
-        public static Color ParseColorString(string s)
+        public static System.Windows.Media.Color ParseColorString(string s)
         {
             // We only expect "#RRGGBB".
             if (s.Length != 7 || !s.StartsWith("#"))
-        return Color.FromRgb(255,255,255);
+        return System.Windows.Media.Color.FromRgb(255,255,255);
 
             try {
-        return (Color) ColorConverter.ConvertFromString(s);
+        return (System.Windows.Media.Color) System.Windows.Media.ColorConverter.ConvertFromString(s);
             }
             catch(System.FormatException)
             {
-        return Color.FromRgb(255,255,255);
+        return System.Windows.Media.Color.FromRgb(255,255,255);
             }
         }
 
@@ -196,17 +196,17 @@ namespace smx_config
             return result;
         }
 
-        static public Color ScaleColor(Color c)
+        static public System.Windows.Media.Color ScaleColor(System.Windows.Media.Color c)
         {
-            return Color.FromRgb(ScaleColor(c.R), ScaleColor(c.G), ScaleColor(c.B));
+            return System.Windows.Media.Color.FromRgb(ScaleColor(c.R), ScaleColor(c.G), ScaleColor(c.B));
         }
 
-        static public Color UnscaleColor(Color c)
+        static public System.Windows.Media.Color UnscaleColor(System.Windows.Media.Color c)
         {
-            return Color.FromRgb(UnscaleColor(c.R), UnscaleColor(c.G), UnscaleColor(c.B));
+            return System.Windows.Media.Color.FromRgb(UnscaleColor(c.R), UnscaleColor(c.G), UnscaleColor(c.B));
         }
 
-        public static Color FromHSV(double H, double S, double V)
+        public static System.Windows.Media.Color FromHSV(double H, double S, double V)
         {
             H %= 360;
             S = Math.Max(0, Math.Min(1, S));
@@ -233,7 +233,7 @@ namespace smx_config
             return ret;
         }
         
-        public static void ToHSV(Color c, out double h, out double s, out double v)
+        public static void ToHSV(System.Windows.Media.Color c, out double h, out double s, out double v)
         {
             h = s = v = 0;
             if (c.R == 0 && c.G == 0 && c.B == 0)
@@ -311,7 +311,7 @@ namespace smx_config
             if (!customGifFile.Exists)
             {
                 // If the user has never loaded a file, load our default.
-                StreamResourceInfo info = Application.GetResourceStream(
+                StreamResourceInfo info = System.Windows.Application.GetResourceStream(
                         new Uri($"pack://application:,,,/Resources/{filename}")
                     );
                 byte[] gif = new byte[info.Stream.Length];
@@ -388,8 +388,8 @@ namespace smx_config
             public int sensor;
         };
         
-        public static readonly List<string> thresholdSliderNames = new()
-        {
+        // TODO: pucgenie: Create from enum
+        public static readonly string[] thresholdSliderNames = {
             "up-left", "up", "up-right",
             "left", "center", "right",
             "down-left", "down", "down-right",
@@ -867,7 +867,7 @@ namespace smx_config
             for (int PanelIndex = 0; PanelIndex < 9; ++PanelIndex)
             {
                 // Scale colors from the hardware value back to the 0-255 value we use in the UI.
-                Color color = Color.FromRgb(
+                System.Windows.Media.Color color = System.Windows.Media.Color.FromRgb(
                     config.stepColor[PanelIndex*3+0],
                     config.stepColor[PanelIndex*3+1],
                     config.stepColor[PanelIndex*3+2]);
@@ -935,7 +935,7 @@ namespace smx_config
                 for(int PanelIndex = 0; PanelIndex < 9 && PanelIndex < panelColors!.Count; ++PanelIndex)
                 {
                     var colorString = panelColors.Get(PanelIndex, "#FFFFFF");
-                    Color color = Helpers.ScaleColor(Helpers.ParseColorString(colorString));
+                    System.Windows.Media.Color color = Helpers.ScaleColor(Helpers.ParseColorString(colorString));
 
                     config.stepColor[PanelIndex*3+0] = color.R;
                     config.stepColor[PanelIndex*3+1] = color.G;

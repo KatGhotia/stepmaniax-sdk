@@ -6,7 +6,7 @@ using System.Windows.Input;
 namespace smx_config
 {
     // A button with a selectable highlight.
-    public class SelectableButton : Button
+    public class SelectableButton : System.Windows.Controls.Button
     {
         public static readonly DependencyProperty SelectedProperty = DependencyProperty.Register("Selected",
             typeof(bool), typeof(SelectableButton), new FrameworkPropertyMetadata(false));
@@ -34,7 +34,7 @@ namespace smx_config
             // Fix the slider not dragging after clicking outside the thumb.
             // http://stackoverflow.com/a/30575638/136829
             bool clickedInSlider = false;
-            MouseMove += delegate (object sender, MouseEventArgs args)
+            MouseMove += delegate (object? sender, System.Windows.Input.MouseEventArgs args)
             {
                 if (args.LeftButton == MouseButtonState.Released || !clickedInSlider || Thumb.IsDragging)
                     return;

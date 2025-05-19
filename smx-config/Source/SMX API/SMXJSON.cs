@@ -306,10 +306,10 @@ namespace SMXJSON
         }
 
         // Parse JSON, expecting a specific outer type.  On parse error, return a default value.
-        // TODO: pucgenie: Why return a default value?! Exception!
+        // TODO: pucgenie: Why return a default value without context?! Exception!
         public static T ParseDefault<T>(string json) where T: new()
         {
-            T? result = Parse<T>(json);
+            var result = Parse<T>(json);
             if (result == null || !typeof(T).IsAssignableFrom(result.GetType()))
         return new T();
             return result;

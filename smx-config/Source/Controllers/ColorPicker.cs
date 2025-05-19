@@ -1,5 +1,4 @@
 ﻿using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Media;
 
 namespace smx_config
@@ -12,7 +11,7 @@ namespace smx_config
         }
     };
 
-    public class ColorPicker : Control
+    public class ColorPicker : System.Windows.Controls.Control
     {
         ColorPickerSlider? HueSlider;
         public delegate void Event();
