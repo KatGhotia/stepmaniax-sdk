@@ -127,7 +127,7 @@ namespace smx_config
                     6, // down-left
                     8, // down-right
                 },
-                _ => Array.Empty<int>(),
+                _ => System.Array.Empty<int>(),
             };
         }
 

@@ -362,7 +362,11 @@ GIF animations will keep playing if the application is minimized.",
 
         private void ConnectedPadList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var newSelection = (ConnectedPadList.SelectedValue as SelectedPad).Value;
+            if (ConnectedPadList.SelectedValue == null)
+            {
+        return;
+            }
+            var newSelection = ((SelectedPad) ConnectedPadList.SelectedValue).Value;
             
             if (ActivePad.selectedPad == newSelection)
         return;
